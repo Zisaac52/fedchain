@@ -5,9 +5,12 @@ from fl.loadTrainData import load2MnistLoader, load2Cifar10TestLoader
 device = config.my_conf['device']
 
 
-def model_eval(model):
-    model.eval()  # 进入模型评估模式
-    testLoader = get_test_loader()
+def model_eval(model, testLoader=None):
+    # 进入模型评估模式
+    model.eval()
+    # 如果没传参，就用原来的全集
+    if testLoader is None:
+        testLoader = get_test_loader()
     total_loss = 0.0
     correct = 0
     dataset_size = 0

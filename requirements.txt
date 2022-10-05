@@ -1,9 +1,9 @@
-numpy
+numpy~=1.21.6
 scipy
-Pillow
+Pillow~=9.2.0
 torch
-torchvision
-matplotlib
+torchvision~=0.13.1
+matplotlib~=3.5.3
 tqdm
 grpcio
 protobuf

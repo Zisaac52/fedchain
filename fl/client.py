@@ -1,4 +1,6 @@
 import copy
+import time
+
 import torch
 import config
 from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
@@ -19,9 +21,10 @@ def load_trainsets():
 
 
 class Client:
-    def __init__(self, lr=0.001):
+    def __init__(self, model, mod_version, lr=0.001, client_id=-1):
         self.dataLoader = None
         self.optimizer = None
+        self._client_id = client_id
         self.BATCH_SIZE = config.my_conf['BATCH_SIZE']
         if self.BATCH_SIZE < 1:
             raise ValueError('BATCH_SIZE配置有误！')
@@ -29,23 +32,29 @@ class Client:
         self.epoch = config.my_conf['local_epoch']
         if self.epoch < 1:
             raise ValueError('local_epoch配置有误！')
-        self.id = -1
+        self.id = client_id
         self.datasets = load_trainsets()
         self.device = config.my_conf['device']
         # 加载数据集
 
-        self._local_model = None
-        self._gobal_model = None
+        self._local_model = copy.deepcopy(model)
+        self._gobal_model = copy.deepcopy(model)
+        self.g_version = mod_version
+
+        self._dataLoader = self._randomLoad(self.datasets)
 
     # 开始本地训练
     def local_train(self):
         self.optimizer = self._get_optimizer()
-        dataLoader = self._randomLoad(self.datasets)
         self._local_model.train()
         for i in range(self.epoch):
             # 加载数据集进行训练
-            for data in dataLoader:
+
+            count = 0
+            start = time.time()
+            for data in self._dataLoader:
                 imgs, targets = data
+                count += len(data)
                 if torch.cuda.is_available():
                     imgs = imgs.to(self.device)
                     targets = targets.to(self.device)
@@ -60,6 +69,8 @@ class Client:
             if config.my_conf['local_OpenEval']:
                 acc, loss = model_eval_nograde(self._local_model)
                 print('{},{},{}'.format(self.id, acc, loss))
+            end = time.time()
+            print('batch:{},run time:{},speed:{}'.format(count, end - start, (end - start) / count))
         diff = self.getDiff()
         return diff
 
@@ -83,9 +94,11 @@ class Client:
             raise Exception("client id error!")
         # 构造数据器
         train_loader = torch.utils.data.DataLoader(mydatasets, batch_size=self.BATCH_SIZE,
-                                                sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
+                                                   sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
+        train_loader
         return train_loader
 
+    # 将训练完成的模型发送到服务器聚合，带本地接收到的全局模型的版本
     def getDiff(self):
         diff = dict()
         # 遍历更新之后的各层模型参数。并返回每层对应的名字(name)和数据。
@@ -93,17 +106,21 @@ class Client:
             # print(data != model.state_dict()[name])  # 用于打印出来是否参数相等
             # 将当前name和全局模型所对应name的数据进行相减，得到权重大小的变化量即权重差
             diff[name] = (data - self._gobal_model.state_dict()[name])
-        return diff
+
+        return diff, self.g_version
 
     # 接收来自服务端的模型,由服务器调用设置模型
-    def setModelFromServer(self, model, ids):
+    def setModelFromServer(self, model, g_version):
         self._gobal_model = copy.deepcopy(model)
         self._local_model = copy.deepcopy(model)
+        self.g_version = g_version
         if config.my_conf['local_OpenEval']:
             print('gobal_epoch,Accuracy,loss')
             acc, loss = model_eval_nograde(self._local_model)
-            print('{},{},{}'.format(ids, acc, loss))
-        self.id = ids
+            print('{},{},{}'.format(self.id, acc, loss))
         # if torch.cuda.is_available():
         #     self._local_model.to(self.device)
         #     self._gobal_model.to(self.device)
+
+    def getDataset(self):
+        return self._dataLoader

@@ -1,60 +1,51 @@
-import torch.cuda
-from torch import nn
+import matplotlib.pyplot as plt
 
-from fl.loadTrainData import load2Loader
-from fl.model import mnist_Net
+import torch
+import torchvision
+from torchvision import datasets, transforms
 
-# 2. 设置超参数
-BATCH_SIZE = 512
-EPOCHS = 20
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from DLGAttack.attack import deep_leakage_from_gradients, showImg
+from DLGAttack.dlg.models.vision import LeNet, weights_init
+from DLGAttack.dlg.utils import label_to_onehot, cross_entropy_for_onehot
 
 if __name__ == '__main__':
-    # 加载数据
-    train_loader, test_loader = load2Loader(BATCH_SIZE)
-    model = mnist_Net()
+    print(torch.__version__, torchvision.__version__)
+
+    device = "cpu"
     if torch.cuda.is_available():
-        model.cuda()
-    # 建立损失函数
-    loss_fn = nn.CrossEntropyLoss()
-    if torch.cuda.is_available():
-        loss_fn.cuda()
+        device = "cuda"
+    print("Running on %s" % device)
 
-    # 建立优化器
-    learning_rate = 0.01
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    dst = datasets.CIFAR10("data", download=True)
+    tp = transforms.ToTensor()
+    tt = transforms.ToPILImage()
+    img_index = 30
+    gt_data = tp(dst[img_index][0]).to(device)
 
-    # 设置训练次数
-    total_train_step = 0
+    gt_data = gt_data.view(1, *gt_data.size())
+    gt_label = torch.Tensor([dst[img_index][1]]).long().to(device)
+    gt_label = gt_label.view(1, )
+    gt_onehot_label = label_to_onehot(gt_label).to(device)
 
-    # 设置测试次数
-    total_test_step = 0
+    plt.imshow(tt(gt_data[0].cpu()))
 
-    # 训练的次数
-    epoch = 10
+    net = LeNet().to(device)
 
+    torch.manual_seed(1234)
 
-    for i in range(epoch):
-        print(f"------------第{i + 1}轮训练-------------")
+    net.apply(weights_init)
+    criterion = cross_entropy_for_onehot
 
-        model.train()
-        for data in train_loader:
-            imgs, targets = data
-            if torch.cuda.is_available():
-                imgs = imgs.cuda()
-                targets = targets.cuda()
-            output = model(imgs)
-            loss = loss_fn(output, targets)
+    # compute original gradient
+    pred = net(gt_data)
+    y = criterion(pred, gt_onehot_label)
+    dy_dx = torch.autograd.grad(y, net.parameters())
 
-            # 优化器优化模型
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+    original_dy_dx = list((_.detach().clone() for _ in dy_dx))
 
-            total_train_step += 1
-            if total_train_step % 100 == 0:
-                print(f"训练次数：{total_train_step}  loss：{loss.item()}")
+    # generate dummy data and label
+    dummy_data = torch.randn(gt_data.size()).to(device).requires_grad_(True)
+    dummy_label = torch.randn(gt_onehot_label.size()).to(device).requires_grad_(True)
 
-        # 保存参数
-        torch.save(model, "./data/model/network_{}.pth".format(i))
-        print("模型已保存")
+    h = deep_leakage_from_gradients(net, original_dy_dx, gt_data, gt_onehot_label)
+    showImg(h)

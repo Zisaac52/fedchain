@@ -27,3 +27,45 @@ FedPer与FedAvg有以下3点不同：
 1. FedAvg每次需要随机选择客户端，而FedPer需要激活所有客户端。
 2. FedAvg需要聚合所有参数，FedPer只是聚合基础层参数。
 3. FedAvg中只有一个全局模型，所有客户端都使用该全局模型，而FedPer中每个客户端都有自己的个性化模型。
+
+## 联邦学习配置
+config.py文件
+关键参数配置
+```
+    # client
+    # 客户端总数
+    'client.amount': 10,
+    # 本地迭代次数
+    'local_epoch': 2,
+    # 是否开启本地模型评估
+    'local_OpenEval': False,
+
+    # server
+    # 全局迭代次数
+    'gobal_epoch': 20,
+    # 是否开启模型评估
+    'openEval': True,
+
+    # 数据集(cifar,mnist)
+    'dataset': 'cifar',
+    # 学习率
+    'learn_rate': 0.01,
+    # 数据集批次
+    'BATCH_SIZE': 64,
+```
+本地联邦学习模拟采用串行和随机分配训练集的方式，进行多端环境模拟
+```python
+    # 创建一个服务
+    sr = Server()
+    model, version = sr.get_model()
+    # 加入工作节点
+    for i in range(config.my_conf['client.amount']):
+        # 注册客户端，向每个节点分发模型
+        sr.addClient(Client(model=model,mod_version=version, lr=config.my_conf['learn_rate'], client_id=i),
+                    '127.0.0.1:808{}'.format(i))
+    # 开始迭代训练
+    for i in range(config.my_conf['gobal_epoch']):
+        sr.train(i)
+    # 保存模型
+    sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
+```

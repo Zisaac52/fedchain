@@ -14,12 +14,28 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndata.proto\x12\x0c\x62\x61se_package\"\x1d\n\ractionrequest\x12\x0c\n\x04text\x18\x01 \x01(\t\"\x1e\n\x0e\x61\x63tionresponse\x12\x0c\n\x04text\x18\x01 \x01(\t2U\n\nFormatData\x12G\n\x08\x44oFormat\x12\x1b.base_package.actionrequest\x1a\x1c.base_package.actionresponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndata.proto\x12\x0c\x62\x61se_package\"\x1a\n\x07request\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x1b\n\x08response\x12\x0f\n\x07message\x18\x01 \x01(\t\"9\n\ractionrequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\x05\x12\x0c\n\x04\x66ile\x18\x03 \x01(\x0c\"!\n\x0e\x61\x63tionresponse\x12\x0f\n\x07message\x18\x01 \x01(\t2\x96\x01\n\x08\x46ormData\x12J\n\x0buploadModel\x12\x1b.base_package.actionrequest\x1a\x1c.base_package.actionresponse\"\x00\x12>\n\x0b\x63ommunicate\x12\x15.base_package.request\x1a\x16.base_package.response\"\x00\x62\x06proto3')
 
 
 
+_REQUEST = DESCRIPTOR.message_types_by_name['request']
+_RESPONSE = DESCRIPTOR.message_types_by_name['response']
 _ACTIONREQUEST = DESCRIPTOR.message_types_by_name['actionrequest']
 _ACTIONRESPONSE = DESCRIPTOR.message_types_by_name['actionresponse']
+request = _reflection.GeneratedProtocolMessageType('request', (_message.Message,), {
+  'DESCRIPTOR' : _REQUEST,
+  '__module__' : 'data_pb2'
+  # @@protoc_insertion_point(class_scope:base_package.request)
+  })
+_sym_db.RegisterMessage(request)
+
+response = _reflection.GeneratedProtocolMessageType('response', (_message.Message,), {
+  'DESCRIPTOR' : _RESPONSE,
+  '__module__' : 'data_pb2'
+  # @@protoc_insertion_point(class_scope:base_package.response)
+  })
+_sym_db.RegisterMessage(response)
+
 actionrequest = _reflection.GeneratedProtocolMessageType('actionrequest', (_message.Message,), {
   'DESCRIPTOR' : _ACTIONREQUEST,
   '__module__' : 'data_pb2'
@@ -34,14 +50,18 @@ actionresponse = _reflection.GeneratedProtocolMessageType('actionresponse', (_me
   })
 _sym_db.RegisterMessage(actionresponse)
 
-_FORMATDATA = DESCRIPTOR.services_by_name['FormatData']
+_FORMDATA = DESCRIPTOR.services_by_name['FormData']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _ACTIONREQUEST._serialized_start=28
-  _ACTIONREQUEST._serialized_end=57
-  _ACTIONRESPONSE._serialized_start=59
-  _ACTIONRESPONSE._serialized_end=89
-  _FORMATDATA._serialized_start=91
-  _FORMATDATA._serialized_end=176
+  _REQUEST._serialized_start=28
+  _REQUEST._serialized_end=54
+  _RESPONSE._serialized_start=56
+  _RESPONSE._serialized_end=83
+  _ACTIONREQUEST._serialized_start=85
+  _ACTIONREQUEST._serialized_end=142
+  _ACTIONRESPONSE._serialized_start=144
+  _ACTIONRESPONSE._serialized_end=177
+  _FORMDATA._serialized_start=180
+  _FORMDATA._serialized_end=330
 # @@protoc_insertion_point(module_scope)

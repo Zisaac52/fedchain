@@ -2,10 +2,10 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from blockchain.node.base_package import data_pb2 as data__pb2
+import blockchain.node.base_package.data_pb2 as data__pb2
 
 
-class FormatDataStub(object):
+class FormDataStub(object):
     """定义服务,用在rpc传输中
     """
 
@@ -15,55 +15,90 @@ class FormatDataStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.DoFormat = channel.unary_unary(
-            '/base_package.FormatData/DoFormat',
-            request_serializer=data__pb2.actionrequest.SerializeToString,
-            response_deserializer=data__pb2.actionresponse.FromString,
-        )
+        self.uploadModel = channel.unary_unary(
+                '/base_package.FormData/uploadModel',
+                request_serializer=data__pb2.actionrequest.SerializeToString,
+                response_deserializer=data__pb2.actionresponse.FromString,
+                )
+        self.communicate = channel.unary_unary(
+                '/base_package.FormData/communicate',
+                request_serializer=data__pb2.request.SerializeToString,
+                response_deserializer=data__pb2.response.FromString,
+                )
 
 
-class FormatDataServicer(object):
+class FormDataServicer(object):
     """定义服务,用在rpc传输中
     """
 
-    def DoFormat(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def uploadModel(self, request, context):
+        """上传模型
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def communicate(self, request, context):
+        """节点间交流
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_FormatDataServicer_to_server(servicer, server):
+def add_FormDataServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'DoFormat': grpc.unary_unary_rpc_method_handler(
-            servicer.DoFormat,
-            request_deserializer=data__pb2.actionrequest.FromString,
-            response_serializer=data__pb2.actionresponse.SerializeToString,
-        ),
+            'uploadModel': grpc.unary_unary_rpc_method_handler(
+                    servicer.uploadModel,
+                    request_deserializer=data__pb2.actionrequest.FromString,
+                    response_serializer=data__pb2.actionresponse.SerializeToString,
+            ),
+            'communicate': grpc.unary_unary_rpc_method_handler(
+                    servicer.communicate,
+                    request_deserializer=data__pb2.request.FromString,
+                    response_serializer=data__pb2.response.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        'base_package.FormatData', rpc_method_handlers)
+            'base_package.FormData', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
-# This class is part of an EXPERIMENTAL API.
-class FormatData(object):
+ # This class is part of an EXPERIMENTAL API.
+class FormData(object):
     """定义服务,用在rpc传输中
     """
 
     @staticmethod
-    def DoFormat(request,
-                 target,
-                 options=(),
-                 channel_credentials=None,
-                 call_credentials=None,
-                 insecure=False,
-                 compression=None,
-                 wait_for_ready=None,
-                 timeout=None,
-                 metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/base_package.FormatData/DoFormat',
-                                             data__pb2.actionrequest.SerializeToString,
-                                             data__pb2.actionresponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+    def uploadModel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/base_package.FormData/uploadModel',
+            data__pb2.actionrequest.SerializeToString,
+            data__pb2.actionresponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def communicate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/base_package.FormData/communicate',
+            data__pb2.request.SerializeToString,
+            data__pb2.response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -37,7 +37,6 @@ class Server:
     # 循环遍历发送初始模型到client
     def dispatch(self, cln):
         cln.setModelFromServer(self._gobal_model, self.version)
-        pass
 
     # 对diff以权重u进行累加
     def accumulator(self, diff, u_w):
@@ -77,6 +76,27 @@ class Server:
         self._clientlab.append(cln_name)
         print('节点-{}-加入'.format(cln_name))
 
+    # 原始的训练聚合方法
+    def start_train(self):
+        if self._count == 0:
+            # 输出准确率和loss
+            if config.my_conf['openEval']:
+                print('gobal_epoch,Accuracy,loss')
+        # 模型评估
+        if config.my_conf['openEval']:
+            acc, loss = model_eval(self._gobal_model)
+            print('{},{},{}'.format(self._count, acc, loss))
+        self._count += 1
+        for i, cln in enumerate(self._clientList):
+            diff, ver = cln.local_train()
+            if ver != -1:
+                self.accumulator(diff, 1)
+        # 模型聚合
+        self.aggregation()
+        self.version += 1
+        self.dispatch_normal()
+
+    # 测试聚合方法
     def train(self, currentEpoch):
 
         if self._count == 0:

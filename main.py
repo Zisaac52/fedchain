@@ -1,11 +1,8 @@
-import csv
-
 import torch
 
 import config
 from fl.client import Client
 from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
-from fl.model import mnist_Net
 from fl.modelEval import model_eval
 from fl.server import Server
 
@@ -43,7 +40,7 @@ if __name__ == '__main__':
                     '127.0.0.1:808{}'.format(i))
     # 开始迭代训练
     for i in range(config.my_conf['gobal_epoch']):
-        sr.train(i)
+        sr.start_train()
         # 保存模型
         # sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
     print('训练完毕')

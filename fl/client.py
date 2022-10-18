@@ -22,7 +22,6 @@ def load_trainsets():
 
 class Client:
     def __init__(self, model, mod_version, lr=0.001, client_id=-1):
-        self.dataLoader = None
         self.optimizer = None
         self._client_id = client_id
         self.BATCH_SIZE = config.my_conf['BATCH_SIZE']
@@ -39,22 +38,30 @@ class Client:
 
         self._local_model = copy.deepcopy(model)
         self._gobal_model = copy.deepcopy(model)
-        self.g_version = mod_version
+        self.g_version = -1 if self.id in config.my_conf['test_client_id'] else mod_version
 
         self._dataLoader = self._randomLoad(self.datasets)
 
     # 开始本地训练
     def local_train(self):
         self.optimizer = self._get_optimizer()
+        # # 模型评估
+        # if config.my_conf['local_OpenEval']:
+        #     acc, loss = model_eval_nograde(self._local_model, self._dataLoader)
+        #     print('{},{},{}'.format(self.id, acc, loss))
+        # # 异步不平衡训练实验
+        # if self.id in config.my_conf['test_client_id']:
+        #     return None, -1
+
+        # 模型训练逻辑
         self._local_model.train()
         for i in range(self.epoch):
             # 加载数据集进行训练
-
-            count = 0
-            start = time.time()
+            # count = 0
+            # start = time.time()
             for data in self._dataLoader:
                 imgs, targets = data
-                count += len(data)
+                # count += len(data)
                 if torch.cuda.is_available():
                     imgs = imgs.to(self.device)
                     targets = targets.to(self.device)
@@ -65,12 +72,8 @@ class Client:
                 loss = torch.nn.functional.cross_entropy(output, targets)
                 loss.backward()
                 self.optimizer.step()
-            # 模型评估
-            if config.my_conf['local_OpenEval']:
-                acc, loss = model_eval_nograde(self._local_model)
-                print('{},{},{}'.format(self.id, acc, loss))
-            end = time.time()
-            print('batch:{},run time:{},speed:{}'.format(count, end - start, (end - start) / count))
+            # end = time.time()
+            # print('batch:{},run time:{},speed:{}'.format(count, end - start, (end - start) / count))
         diff = self.getDiff()
         return diff
 
@@ -94,8 +97,7 @@ class Client:
             raise Exception("client id error!")
         # 构造数据器
         train_loader = torch.utils.data.DataLoader(mydatasets, batch_size=self.BATCH_SIZE,
-                                                   sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
-        train_loader
+                                                sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
         return train_loader
 
     # 将训练完成的模型发送到服务器聚合，带本地接收到的全局模型的版本
@@ -114,13 +116,6 @@ class Client:
         self._gobal_model = copy.deepcopy(model)
         self._local_model = copy.deepcopy(model)
         self.g_version = g_version
-        if config.my_conf['local_OpenEval']:
-            print('gobal_epoch,Accuracy,loss')
-            acc, loss = model_eval_nograde(self._local_model)
-            print('{},{},{}'.format(self.id, acc, loss))
-        # if torch.cuda.is_available():
-        #     self._local_model.to(self.device)
-        #     self._gobal_model.to(self.device)
 
     def getDataset(self):
         return self._dataLoader

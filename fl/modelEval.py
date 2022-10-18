@@ -47,8 +47,8 @@ def model_eval(model, testLoader=None):
 
 
 # 返回一个元组类型（正确的个数，总的测试集数量，准确率，损失值）
-def model_eval_nograde(model):
-    testLoader = get_test_loader()
+def model_eval_nograde(model, testset=None):
+    testLoader = get_test_loader() if testset is None else testset
     test_loss = 0
     correct = 0
     model.eval()

@@ -1,0 +1,30 @@
+syntax = "proto3";
+package base_package;
+
+ //定义服务,用在rpc传输中
+service FormData {
+  // 上传模型
+  rpc uploadModel(actionrequest) returns (actionresponse){}
+  // 节点间交流
+  rpc communicate(request) returns (response){}
+}
+// 普通的使用json交流
+message request {
+  string message = 1;
+}
+message response{
+  string message=1;
+}
+
+// 发送二进制信息
+message actionrequest {
+  // 发送内容名称
+  string name = 1;
+  // 发送用途标记
+  int32 type = 2;
+  bytes file = 3;
+}
+message actionresponse{
+  // 回复的信息
+  string message=1;
+}

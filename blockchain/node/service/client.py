@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
     if data is None:
         return 'Error, empty data!'
+    # try:
+    #     data = json.dumps(data)
+    # except:
+    #     logger.error('The data is not a json string！')
     # 监听频道
     conn = grpc.insecure_channel(HOST + ':' + PORT)
     # 客户端使用Stub类发送请求,参数为频道,为了绑定链接
@@ -41,8 +45,10 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
         else:
             request = json.dumps(data)
         response = client.communicate(data_pb2.request(message=request))
+        response = response.message
     else:
-        response = 'Error, the function is not correct!'
+        logger.error('Error, the function is not correct!')
+        response = {'status': 500}
     return response
 
 

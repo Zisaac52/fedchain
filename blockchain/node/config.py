@@ -29,7 +29,8 @@ config = {
     #   port：8080,
     #   node_attr：
     # }
-    'node_list_sn': [{'ip': get_host_ip(), 'port': '8081', 'attr': 'SN'}],
+    # {'ip': get_host_ip(), 'port': '8081', 'attr': 'SN'}
+    'node_list_sn': [],
     'node_list_en': [],
     # 当前任务类型 0-注册节点，1-
     'type': [0, 1, 2, 3, 4],

@@ -1,10 +1,25 @@
+import logging
+
 import torch
 
 import config
+from blockchain.start import startNode
 from fl.client import Client
 from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
 from fl.modelEval import model_eval
 from fl.server import Server
+
+logger = logging.getLogger()
+# 创建一个handler，用于写入日志文件
+# fh = logging.FileHandler('test1.log',encoding='utf-8')
+# 再创建一个handler，用于输出到控制台
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger.setLevel(logging.DEBUG)  # 设置日志的级别
+# fh.setFormatter(formatter)#设置的日志的输出
+ch.setFormatter(formatter)
+# logger.addHandler(fh) #logger对象可以添加多个fh和ch对象
+logger.addHandler(ch)
 
 
 def myEval(mod):
@@ -30,25 +45,6 @@ def load_trainsets():
 
 
 if __name__ == '__main__':
-    # 创建一个服务
-    sr = Server()
-    model, version = sr.get_model()
-    # 加入工作节点
-    for i in range(config.my_conf['client.amount']):
-        # 注册客户端，向每个节点分发模型
-        sr.addClient(Client(model=model, mod_version=version, lr=config.my_conf['learn_rate'], client_id=i),
-                    '127.0.0.1:808{}'.format(i))
-    # 开始迭代训练
-    for i in range(config.my_conf['gobal_epoch']):
-        sr.start_train()
-        # 保存模型
-        # sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
-    print('训练完毕')
-
-    # 评估训练完成的模型
-    # myEval('os')
-    # myEval('os')
-    # myEval('os')
-    # myEval('ns')
-    # myEval('ns')
-    # myEval('ns')
+    # 启动该节点
+    startNode(attr='SN',port='8080')
+    pass

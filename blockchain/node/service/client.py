@@ -6,7 +6,7 @@ import grpc
 
 from blockchain.node.base_package import data_pb2, data_pb2_grpc
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 # 调用指定机器的远程方法，得到返回结果

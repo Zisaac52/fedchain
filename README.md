@@ -4,9 +4,10 @@
 使用grpc框架实现rpc通信，建立区块链节点
 由于资源有限，利用mysql模拟区块存储
 
-必要的组件库
+必要的组件库->[镜像源使用说明](https://blog.csdn.net/weixin_45523107/article/details/116535445)
 ```
-pip install -r requirements.txt
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+pip install -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
 ```
 
 proto文件编译命令，在proto文件所在位置运行该命令
@@ -61,11 +62,11 @@ config.py文件
     # 加入工作节点
     for i in range(config.my_conf['client.amount']):
         # 注册客户端，向每个节点分发模型
-        sr.addClient(Client(model=model,mod_version=version, lr=config.my_conf['learn_rate'], client_id=i),
+        sr.addClient(Client(model=model, mod_version=version, lr=config.my_conf['learn_rate'], client_id=i),
                     '127.0.0.1:808{}'.format(i))
-    # 开始迭代训练
+    # 开始全局迭代训练
     for i in range(config.my_conf['gobal_epoch']):
-        sr.train(i)
-    # 保存模型
-    sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
+        sr.start_train()
+        # 保存模型
+        # sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
 ```

@@ -44,7 +44,7 @@ def notify_result(num, msg):
     if method:
         return method(msg)
     else:
-        return Message(type=-1,status=500,content={'message': 'The handdler is not exist!'})
+        return Message(type=-1, status=500, content={'message': 'The handdler is not exist!'})
 
 
 # 通过rpc调用的函数
@@ -63,3 +63,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
         json_dict = json.loads(request.message)
         resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         return data_pb2.response(message=json.dumps(resp))
+
+
+if __name__ == '__main__':
+    serve()

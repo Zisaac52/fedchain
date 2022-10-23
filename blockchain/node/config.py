@@ -30,7 +30,7 @@ config = {
     #   node_attr：
     # }
     # {'ip': get_host_ip(), 'port': '8081', 'attr': 'SN'}
-    'node_list_sn': [{'ip': '124.71.0.131', 'port': '8080', 'attr': 'SN'}],
+    'node_list_sn': [],
     'node_list_en': [],
     # 当前任务类型 0-注册节点，1-
     'type': [0, 1, 2, 3, 4],

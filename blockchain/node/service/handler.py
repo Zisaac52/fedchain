@@ -37,12 +37,13 @@ def update_node_handler(message):
 
 # 判断当前是否重复注册
 def check_and_set_node(message, attr):
-    for n in config.get("node_list_{}".format(attr.lower())):
-        if n.get('ip') + n.get('port') == message.get('ip') + message.get('port'):
-            logger.error('This node is exist!')
-            return 'The current {} node already exists, please do not repeat registration'.format(attr.lower())
+    if len(config.get("node_list_{}".format(attr.lower()))) != 0:
+        # 判断节点是否重复
+        for n in config.get("node_list_{}".format(attr.lower())):
+            if n.get('ip') + n.get('port') == message.get('ip') + message.get('port'):
+                return 'The current {} node already exists, please do not repeat registration'.format(attr.lower())
     config.get("node_list_{}".format(attr.lower())).append(message)
-    return 'successed！'
+    return 'Add new node successfully!'
 
 
 def bordcast_handler(message):

@@ -22,7 +22,7 @@ def serve(HOST='localhost', PORT='8081'):
         ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])  # 创建一个服务器
     data_pb2_grpc.add_FormDataServicer_to_server(FormData(), grpcServer)  # 在服务器中添加派生的接口服务（自己实现了处理函数）
     grpcServer.add_insecure_port(HOST + ':' + PORT)  # 添加监听端口
-    logger.info('server start, listen in-{}'.format(PORT))
+    logger.info('server start, listen in-{}'.format(HOST + ':' + PORT))
     grpcServer.start()  # 启动服务器
     try:
         while True:

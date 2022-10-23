@@ -51,8 +51,8 @@ def load_trainsets():
 if __name__ == '__main__':
     # 启动该节点
     startNode(attr='SN', port='8080')
-    # # time.sleep(20)
-    # conn = grpc.insecure_channel('{}:{}'.format('124.71.0.131', '8080'))
+    # time.sleep(20)
+    # conn = grpc.insecure_channel('{}:{}'.format('10.66.9.68', '8080'))
     # # 客户端使用Stub类发送请求,参数为频道,为了绑定链接
     # client = data_pb2_grpc.FormDataStub(channel=conn)
     # jstr = json.dumps({'type': 1, 'status': 200, 'content':{'message': 'connect success!'}})

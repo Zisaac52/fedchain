@@ -20,7 +20,7 @@ class NodeSN:
         # 读取自己节点的属性
         if self.port != '' or self.port is not None:
             # 创建服务端
-            self.server = multiprocessing.Process(target=serve, args=('127.0.0.1', self.port,))
+            self.server = multiprocessing.Process(target=serve, args=(self.node_info.get('ip'), self.port,))
         else:
             raise Exception("Error,the config 'port' is empty!")
 

@@ -8,7 +8,7 @@ from blockchain.node.service.client import runRemoteFunc
 logger = logging.getLogger()
 
 
-# 节点收到注册消息后执行该方法
+# 节点收到注册消息后执行该方法--0
 def register_handler(message):
     msg = ''
     # 判断消息是否正确,存入配置中
@@ -29,6 +29,7 @@ def register_handler(message):
     return Message(type=0, status=200, content={'message': msg})
 
 
+# --1
 def update_node_handler(message):
     msg = check_and_set_node(message, 'SN')
     logger.info("Node list updated,new SN {}".format(message))
@@ -46,11 +47,12 @@ def check_and_set_node(message, attr):
     return 'Add new node successfully!'
 
 
+# --2
 def bordcast_handler(message):
     logger.info(message)
     return Message(type=1, status=200, content={'message': 'bordcast success！'})
 
 
-# 接收节点状态向量，计算
+# 接收节点状态向量，计算--3
 def calculate_status_vector_handler():
     pass

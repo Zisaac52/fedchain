@@ -30,7 +30,7 @@ class NodeSN:
             self.sn_handler()
         else:
             pass
-        if len(config.get('node_list_sn')) is 0:
+        if len(config.get('node_list_sn')) == 0:
             logger.warning('This is the first node, or node_list is not correct!')
             return
 

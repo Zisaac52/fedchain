@@ -32,7 +32,7 @@ def register_handler(message):
 def update_node_handler(message):
     msg = check_and_set_node(message, 'SN')
     logger.info("Node list updated,new SN {}".format(message))
-    return Message(type=0, status=200, content={'message': msg})
+    return Message(type=2, status=200, content={'message': msg})
 
 
 # 判断当前是否重复注册
@@ -46,7 +46,8 @@ def check_and_set_node(message, attr):
 
 
 def bordcast_handler(message):
-    pass
+    logger.info(message)
+    return Message(type=1, status=200, content={'message': 'bordcast success！'})
 
 
 # 接收节点状态向量，计算

@@ -1,8 +1,12 @@
+import json
 import logging
+import time
 
+import grpc
 import torch
 
 import config
+from blockchain.node.base_package import data_pb2, data_pb2_grpc
 from blockchain.start import startNode
 from fl.client import Client
 from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
@@ -46,5 +50,12 @@ def load_trainsets():
 
 if __name__ == '__main__':
     # 启动该节点
-    startNode(attr='SN',port='8080')
+    startNode(attr='SN', port='8080')
+    # time.sleep(20)
+    # conn = grpc.insecure_channel('{}:{}'.format('127.0.0.1', '8080'))
+    # # 客户端使用Stub类发送请求,参数为频道,为了绑定链接
+    # client = data_pb2_grpc.FormDataStub(channel=conn)
+    # jstr = json.dumps({'type': 1, 'status': 200, 'content':{'message': 'connect success!'}})
+    # response = client.communicate(data_pb2.request(message=jstr))
+    # print(response)
     pass

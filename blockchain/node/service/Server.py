@@ -64,6 +64,3 @@ class FormData(data_pb2_grpc.FormDataServicer):
         resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         return data_pb2.response(message=json.dumps(resp))
 
-
-if __name__ == '__main__':
-    serve()

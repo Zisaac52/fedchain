@@ -19,6 +19,7 @@ logger.addHandler(ch)
 
 def SetConfig(port, fsn=True):
     config['FirstNode'] = fsn
+    config['port'] = port
 
 
 if __name__ == '__main__':
@@ -31,5 +32,6 @@ if __name__ == '__main__':
     parser.add_argument('-z', action="store_true", help='It is a flag that this is the first node')
     # 获得传入的参数
     args = parser.parse_args()
+    SetConfig(args.port, args.z)
     # 启动该节点
     startNode(attr=args.nt, port=args.port)

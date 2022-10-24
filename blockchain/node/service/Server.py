@@ -8,7 +8,7 @@ from concurrent import futures
 
 from blockchain.node.base_package import data_pb2, data_pb2_grpc
 from blockchain.node.entity.MessageEntity import Message
-from blockchain.node.service.handler import register_handler, bordcast_handler, update_node_handler
+from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MAX_MESSAGE_LENGTH = 100 * 1024 * 1024
@@ -36,7 +36,7 @@ def serve(HOST='localhost', PORT='8081'):
 def notify_result(num, msg):
     numbers = {
         0: register_handler,
-        1: bordcast_handler,
+        1: networkinfo_handler,
         2: update_node_handler,
         # 3: error
     }
@@ -64,7 +64,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
             json_dict = json.loads(request.message)
             resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         except RuntimeError as e:
-            resp = Message(type=-1,status=500,content={'{}'.format(e)})
+            resp = Message(type=-1,status=500, content={'{}'.format(e)})
             logger.error(e)
         return data_pb2.response(message=json.dumps(resp))
 

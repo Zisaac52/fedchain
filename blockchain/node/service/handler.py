@@ -20,12 +20,7 @@ def register_handler(message):
         # 验证正确则向其他节点广播
         if ok:
             # 向其他SN节点发送列表
-            # bordcastMsg = Message(type=1, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
-            # for sn in config.get('node_list_sn'):
-            #     resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
-            #                         PORT=sn.get('port'))
-            #     if resp.get('status') != 200:
-            #         logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+            bordcast_handler(json.dumps(config.get('node_list_sn')), 2)
             return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
         else:
             return Message(type=0, status=500, content={'message': msg})
@@ -33,10 +28,9 @@ def register_handler(message):
         return Message(type=0, status=200, content={'message': check_and_set_node(message, 'EN')})
 
 
-# --1
-def bordcast_handler(message):
-    logger.info(message)
-    return Message(type=1, status=200, content={'message': 'bordcast success！'})
+# 处理网络相关的信息，返回给请求用户--1
+def networkinfo_handler(message):
+    pass
 
 
 # --2
@@ -44,6 +38,24 @@ def update_node_handler(message):
     msg = 'update successfully!'
     logger.info("Node list updated,new SN {}".format(message))
     return Message(type=2, status=200, content={'message': msg})
+
+
+# 接收节点状态向量，计算--3
+def calculate_status_vector_handler():
+    pass
+
+
+# 处理需要广播的业务
+def bordcast_handler(message, mytype):
+    if len(config.get('node_list_sn')) > 0:
+        bordcastMsg = Message(type=mytype, status=200, content={'message': message})
+        for sn in config.get('node_list_sn'):
+            resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
+                                PORT=sn.get('port'))
+            if resp.get('status') != 200:
+                logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+    else:
+        logger.warning('Empty SN list!')
 
 
 # 判断当前是否重复注册
@@ -56,8 +68,3 @@ def check_and_set_node(message, attr):
                     attr.lower())
     config.get("node_list_{}".format(attr.lower())).append(message)
     return True, 'Add new node successfully!'
-
-
-# 接收节点状态向量，计算--3
-def calculate_status_vector_handler():
-    pass

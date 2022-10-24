@@ -70,3 +70,10 @@ config.py文件
         # 保存模型
         # sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
 ```
+节点启动
+```linux
+# 在8081启动第一个SN节点
+python main.py --port=8081 --nt=SN -z
+# 在8081启动SN节点(节点会向入口地址注册)
+python main.py --port=8081 --nt=SN
+```

@@ -21,6 +21,7 @@ def register_handler(message):
         if ok:
             # 向其他SN节点发送列表
             # bordcast_handler(json.dumps(config.get('node_list_sn')), 2)
+            logger.info(config.get('node_list_sn'))
             return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
         else:
             return Message(type=0, status=500, content={'message': msg})

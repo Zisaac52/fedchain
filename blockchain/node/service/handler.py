@@ -20,7 +20,7 @@ def register_handler(message):
         # 验证正确则向其他节点广播
         if ok:
             # 向其他SN节点发送列表
-            # bordcast_handler(json.dumps(config.get('node_list_sn')), 2)
+            bordcast_handler(config.get('node_list_sn'), 2)
             logger.info(config.get('node_list_sn'))
             return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
         else:

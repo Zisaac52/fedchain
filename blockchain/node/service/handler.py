@@ -20,12 +20,12 @@ def register_handler(message):
         # 验证正确则向其他节点广播
         if ok:
             # 向其他SN节点发送列表
-            bordcastMsg = Message(type=1, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
-            for sn in config.get('node_list_sn'):
-                resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
-                                    PORT=sn.get('port'))
-                if resp.get('status') != 200:
-                    logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+            # bordcastMsg = Message(type=1, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
+            # for sn in config.get('node_list_sn'):
+            #     resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
+            #                         PORT=sn.get('port'))
+            #     if resp.get('status') != 200:
+            #         logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
             return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
         else:
             return Message(type=0, status=500, content={'message': msg})

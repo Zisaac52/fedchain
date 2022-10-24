@@ -30,7 +30,7 @@ config = {
     #   node_attr：
     # }
     # 当前是第一个节点
-    'FirstNode': True,
+    'FirstNode': False,
     # {'ip': '124.71.0.131', 'port': '8080', 'attr': 'SN'}
     'node_list_sn': [],
     'node_list_en': [],

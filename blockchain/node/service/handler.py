@@ -19,8 +19,8 @@ def register_handler(message):
         ok, msg = check_and_set_node(message, 'SN')
         # 验证正确则向其他节点广播
         if ok:
-            # 向其他SN节点广播列表
-            bordcastMsg = Message(type=2, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
+            # 向其他SN节点发送列表
+            bordcastMsg = Message(type=1, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
             for sn in config.get('node_list_sn'):
                 resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
                                     PORT=sn.get('port'))
@@ -34,8 +34,14 @@ def register_handler(message):
 
 
 # --1
+def bordcast_handler(message):
+    logger.info(message)
+    return Message(type=1, status=200, content={'message': 'bordcast success！'})
+
+
+# --2
 def update_node_handler(message):
-    msg = check_and_set_node(message, 'SN')
+    msg = 'update successfully!'
     logger.info("Node list updated,new SN {}".format(message))
     return Message(type=2, status=200, content={'message': msg})
 
@@ -46,15 +52,10 @@ def check_and_set_node(message, attr):
         # 判断节点是否重复
         for n in config.get("node_list_{}".format(attr.lower())):
             if n.get('ip') + n.get('port') == message.get('ip') + message.get('port'):
-                return False, 'The current {} node already exists, please do not repeat registration'.format(attr.lower())
+                return False, 'The current {} node already exists, please do not repeat registration'.format(
+                    attr.lower())
     config.get("node_list_{}".format(attr.lower())).append(message)
     return True, 'Add new node successfully!'
-
-
-# --2
-def bordcast_handler(message):
-    logger.info(message)
-    return Message(type=1, status=200, content={'message': 'bordcast success！'})
 
 
 # 接收节点状态向量，计算--3

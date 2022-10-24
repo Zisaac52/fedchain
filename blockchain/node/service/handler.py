@@ -16,17 +16,21 @@ def register_handler(message):
     if config.get('node_attr').upper() != 'SN' or message is None:
         return Message(type=0, status=500, content={'message': 'Error, empty message or this is not a Server Node！'})
     if message.get('attr').upper() == 'SN':
-        msg = check_and_set_node(message, 'SN')
-        # 向其他SN节点广播列表
-        message['type'] = 2
-        for sn in config.get('node_list_sn'):
-            resp = runRemoteFunc(config['func']['sendMsg'], data=message, HOST=sn.get('ip'),
-                                PORT=sn.get('port'))
-            if resp.get('status') != 200:
-                logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+        ok, msg = check_and_set_node(message, 'SN')
+        # 验证正确则向其他节点广播
+        if ok:
+            # 向其他SN节点广播列表
+            bordcastMsg = Message(type=2, status=200, content={'message': json.dumps(config.get('node_list_sn'))})
+            for sn in config.get('node_list_sn'):
+                resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
+                                    PORT=sn.get('port'))
+                if resp.get('status') != 200:
+                    logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+            return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
+        else:
+            return Message(type=0, status=500, content={'message': msg})
     elif message.get('attr').upper() == 'EN':
-        msg = check_and_set_node(message, 'EN')
-    return Message(type=0, status=200, content={'message': msg})
+        return Message(type=0, status=200, content={'message': check_and_set_node(message, 'EN')})
 
 
 # --1
@@ -42,9 +46,9 @@ def check_and_set_node(message, attr):
         # 判断节点是否重复
         for n in config.get("node_list_{}".format(attr.lower())):
             if n.get('ip') + n.get('port') == message.get('ip') + message.get('port'):
-                return 'The current {} node already exists, please do not repeat registration'.format(attr.lower())
+                return False, 'The current {} node already exists, please do not repeat registration'.format(attr.lower())
     config.get("node_list_{}".format(attr.lower())).append(message)
-    return 'Add new node successfully!'
+    return True, 'Add new node successfully!'
 
 
 # --2

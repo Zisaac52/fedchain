@@ -29,9 +29,13 @@ config = {
     #   port：8080,
     #   node_attr：
     # }
+    # 当前是第一个节点
+    'FirstNode': True,
     # {'ip': '124.71.0.131', 'port': '8080', 'attr': 'SN'}
     'node_list_sn': [],
     'node_list_en': [],
+    # 配置入口SN节点
+    'entry_node': {'ip': '124.71.0.131', 'port': '8080', 'attr': 'SN'},
     # 当前任务类型 0-注册节点，1-
     'type': [0, 1, 2, 3, 4],
     # 该节点的属性，（SN,EN,CN）=>(服务节点，终端，外部接入节点)

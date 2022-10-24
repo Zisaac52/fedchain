@@ -25,30 +25,26 @@ class NodeSN:
             raise Exception("Error,the config 'port' is empty!")
 
     def register_self(self):
-        # 根据自身节点的属性，判断是SN还是EN，SN则直接注册，EN则先选取一个节点计算状态，然后分配
-        if self.node_info.get('attr').upper() == 'SN':
-            self.sn_handler()
-        else:
-            pass
-        if len(config.get('node_list_sn')) == 0:
+        # 自身是第一个节点，则不用注册了
+        if config.get('FirstNode'):
             logger.warning('This is the first node, or node_list is not correct!')
             return
+        self.sn_handler()
 
     def sn_handler(self):
         comun = Message(type=0, status=200, content=self.node_info)
-        origin_node = config.get('node_list_sn')
-        for node in origin_node:
-            if node.get('attr').upper() == 'SN':
-                try:
-                    resp = runRemoteFunc(config['func']['sendMsg'], data=comun, HOST=node.get('ip'),
-                                        PORT=node.get('port'))
-                    if resp.get('status') == 200:
-                        origin_node.append(resp.get('content'))
-                        logger.info('Successful registration of service nodes！')
-                    else:
-                        raise Exception("Server error!")
-                except Exception as e:
-                    logger.error(e)
+        entry = config.get('entry_node')
+        try:
+            resp = runRemoteFunc(config['func']['sendMsg'], data=comun, HOST=entry.get('ip'),
+                                        PORT=entry.get('port'))
+            if resp.get('status') == 200:
+                # config.get('node_list_sn').append(resp.get('content'))
+                config.get('node_list_sn').append(entry)
+                logger.info('Successful, Info:{}'.format(resp.get('content')))
+            else:
+                raise Exception("Server error, response: {}".format(resp))
+        except Exception as e:
+            logger.error(e)
 
     # {
     #   optional: '',

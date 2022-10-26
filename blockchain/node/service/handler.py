@@ -20,12 +20,9 @@ def register_handler(message):
         # 验证正确则向其他节点广播
         if ok:
             # 向其他SN节点发送列表
-            # bordcast_handler(config.get('node_list_sn'), 2)
-            bordcastMsg = Message(type=2, status=200, content={'message': 'Test send message！'})
-            resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=config['entry_node'].get('ip'),
-                                 PORT=config['entry_node'].get('port'))
-            logger.info('{}-{}'.format(config.get('node_list_sn'), resp))
-            return Message(type=0, status=200, content={'message': 'The server lists are updated！'})
+            bordcast_handler(config.get('node_list_sn'), 2)
+            logger.info(config.get('node_list_sn'))
+            return Message(type=0, status=200, content={'message': config.get('node_list_sn')})
         else:
             return Message(type=0, status=500, content={'message': msg})
     elif message.get('attr').upper() == 'EN':
@@ -58,6 +55,8 @@ def bordcast_handler(message, mytype):
                                 PORT=sn.get('port'))
             if resp.get('status') != 200:
                 logger.error('bordcast failure,node {}:{}'.format(sn.get('ip'), sn.get('port')))
+            else:
+                logger.info(resp)
     else:
         logger.warning('Empty SN list!')
 
@@ -72,3 +71,10 @@ def check_and_set_node(message, attr):
                     attr.lower())
     config.get("node_list_{}".format(attr.lower())).append(message)
     return True, 'Add new node successfully!'
+
+
+def runRemoteFuncTest(fun, data, HOST, PORT):
+    logger.info('运行函数：{}，发送参数：{}，主机地址：{}:{}'.format(fun, data, HOST, PORT))
+    return {'status': 200}
+    pass
+

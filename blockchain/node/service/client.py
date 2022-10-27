@@ -1,6 +1,7 @@
 import json
 import logging
 import pickle
+import sys
 
 import grpc
 
@@ -9,21 +10,28 @@ from blockchain.node.base_package import data_pb2, data_pb2_grpc
 logger = logging.getLogger()
 
 
-# 调用指定机器的远程方法，得到返回结果
-# 此处选择运行不同的函数时请求的data和返回消息不同
-# 运行uploadModel时，
-# reuqest = {
-#     'type': 0,
-#     'name': '',
-#     'file':None
-# }
-# 运行communicate时
-# reuqest = {
-#   optional: '',
-#   status: '',
-#   content:{}
-# }
 def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
+    """
+    调用指定机器的远程方法，得到返回结果
+    此处选择运行不同的函数时请求的data和返回消息不同
+    运行uploadModel时，
+    reuqest = {
+        'type': 0,
+        'name': '',
+        'file':None
+    }
+    运行communicate时
+    reuqest = {
+        optional: '',
+        status: '',
+        content:{}
+    }
+    :param func:
+    :param data:
+    :param HOST:
+    :param PORT:
+    :return:
+    """
     if data is None:
         return 'Error, empty data!'
     # 监听频道
@@ -40,10 +48,10 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
         try:
             response = json.loads(response)
         except ValueError as e:
-            logger.error('Cannot convert json string, error: {}'.format(e))
+            logger.error('{} - Cannot convert json string, error: {}'.format(sys._getframe().f_code.co_name, e))
             response = {'type': -1, 'status': 500, 'content': 'ValueError:Cannot convert json string'}
     else:
-        logger.error('Error, the function is not correct!')
+        logger.error('{} - Error, the function is not correct!'.format(sys._getframe().f_code.co_name))
         response = {'type': -1, 'status': 500, 'content': 'ValueError:Client error,the parameter is not correct!'}
     return response
 
@@ -51,7 +59,7 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
 def upload(data):
     mod = pickle.dumps(data['file'])
     actionrequest = data_pb2.actionrequest(type=data['type'], name=data['name'], file=mod)
-    logger.info('actionrequest: {}'.format(actionrequest.type))
+    logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
     return actionrequest
 
 

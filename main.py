@@ -1,8 +1,6 @@
 import argparse
+import json
 import logging
-
-from blockchain.node.config import config
-from blockchain.start import startNode
 
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
@@ -18,8 +16,17 @@ logger.addHandler(ch)
 
 
 def SetConfig(port, fsn=True):
-    config['FirstNode'] = fsn
-    config['port'] = port
+    """
+    保存用户输入的配置
+    :param port:
+    :param fsn:
+    :return:
+    """
+    with open('nodeconfig.json', 'r') as f:
+        conf = json.load(f)
+        conf['FirstNode'] = fsn
+        conf['port'] = port
+    json.dump(conf, open('nodeconfig.json', 'w'))
 
 
 if __name__ == '__main__':
@@ -33,5 +40,8 @@ if __name__ == '__main__':
     # 获得传入的参数
     args = parser.parse_args()
     SetConfig(args.port, args.z)
+    from blockchain.start import startNode
     # 启动该节点
     startNode(attr=args.nt, port=args.port)
+    # with open('nodeconfig.json', 'w+') as f:
+    #     json.dump(config_sn, f)

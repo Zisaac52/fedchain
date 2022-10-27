@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import sys
 
 from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, RegisterData
@@ -27,7 +28,7 @@ class NodeSN:
     def register_self(self):
         # 自身是第一个节点，则不用注册了
         if config.get('FirstNode'):
-            logger.warning('This is the first node, or node_list is not correct!')
+            logger.warning('{} - This is the first node or config is incorrect!'.format(sys._getframe().f_code.co_name))
             return
         self.sn_handler()
 
@@ -38,13 +39,11 @@ class NodeSN:
             resp = runRemoteFunc(config['func']['sendMsg'], data=comun, HOST=entry.get('ip'),
                                         PORT=entry.get('port'))
             if resp.get('status') == 200:
-                # config.get('node_list_sn').append(resp.get('content'))
-                config.get('node_list_sn').append(entry)
-                logger.info('Successful, Info:{}'.format(resp.get('content')))
+                logger.info('{} - Successful, Info:{}'.format(sys._getframe().f_code.co_name, resp.get('content')))
             else:
                 raise Exception("Server error, response: {}".format(resp))
         except Exception as e:
-            logger.error(e)
+            logger.error('{} - {} - {}'.format(self.__class__.__name__, sys._getframe().f_code.co_name, e))
 
     # {
     #   optional: '',

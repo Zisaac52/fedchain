@@ -1,14 +1,17 @@
-import hashlib
 import json
-import pickle
+import json
 import logging
-import grpc
+import pickle
+import sys
 import time
 from concurrent import futures
 
+import grpc
+
 from blockchain.node.base_package import data_pb2, data_pb2_grpc
 from blockchain.node.entity.MessageEntity import Message
-from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler
+from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler, \
+    calculate_status_vector_handler, success_handler, error_handler
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MAX_MESSAGE_LENGTH = 100 * 1024 * 1024
@@ -22,7 +25,7 @@ def serve(HOST='localhost', PORT='8081'):
         ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])  # 创建一个服务器
     data_pb2_grpc.add_FormDataServicer_to_server(FormData(), grpcServer)  # 在服务器中添加派生的接口服务（自己实现了处理函数）
     grpcServer.add_insecure_port(HOST + ':' + PORT)  # 添加监听端口
-    logger.info('server start, listen in-{}'.format(HOST + ':' + PORT))
+    logger.info('server start, listen in - {}'.format(HOST + ':' + PORT))
     grpcServer.start()  # 启动服务器
     try:
         while True:
@@ -38,6 +41,9 @@ def notify_result(num, msg):
         0: register_handler,
         1: networkinfo_handler,
         2: update_node_handler,
+        3: calculate_status_vector_handler,
+        4: success_handler,
+        5: error_handler
         # 3: error
     }
     method = numbers.get(num)
@@ -64,7 +70,10 @@ class FormData(data_pb2_grpc.FormDataServicer):
             json_dict = json.loads(request.message)
             resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         except RuntimeError as e:
-            resp = Message(type=-1,status=500, content={'{}'.format(e)})
-            logger.error(e)
-        return data_pb2.response(message=json.dumps(resp))
-
+            resp = Message(type=-1, status=500, content={'{}'.format(e)})
+            logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
+        if resp is not None:
+            return data_pb2.response(message=json.dumps(resp))
+        else:
+            resp = Message(type=-1, status=200, content={'message': 'no message!'})
+            return data_pb2.response(message=json.dumps(resp))

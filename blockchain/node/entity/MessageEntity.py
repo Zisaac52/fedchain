@@ -8,10 +8,10 @@ def Message(type, status, content):
 
 
 # 上传二进制流的结构
-def FormData(type=0, name='', model_dict=None):
+def FormData(type=0, name='', message='', model_dict=None):
     if model_dict is None:
         return None
-    return {'type': type, 'name': name, 'file': model_dict}
+    return {'type': type, 'name': name, 'message': message, 'file': model_dict}
 
 
 # 封装注册节点消息体

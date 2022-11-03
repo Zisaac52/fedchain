@@ -22,9 +22,18 @@ message actionrequest {
   string name = 1;
   // 发送用途标记
   int32 type = 2;
-  bytes file = 3;
+  // 告知的信息
+  string message=3;
+  // 文件字节
+  bytes file = 4;
 }
 message actionresponse{
-  // 回复的信息
-  string message=1;
+  // 回复内容名称
+  string name = 1;
+  // 回复用途标记
+  int32 type = 2;
+  // 告知的信息
+  string message=3;
+  // 回复文件字节
+  bytes file = 4;
 }

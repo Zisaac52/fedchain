@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from blockchain.node.node_en import NodeEN
 from blockchain.node.node_sn import NodeSN
@@ -17,5 +18,5 @@ def startNode(port='', attr=''):
     try:
         node.startNode()
     except RuntimeError as e:
-        logger.error(e)
+        logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
 

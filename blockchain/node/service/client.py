@@ -5,7 +5,7 @@ import sys
 
 import grpc
 
-from blockchain.node.base_package import data_pb2, data_pb2_grpc
+from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
 
 logger = logging.getLogger()
 
@@ -14,18 +14,18 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
     """
     调用指定机器的远程方法，得到返回结果
     此处选择运行不同的函数时请求的data和返回消息不同
-    运行uploadModel时，
+    运行uploadModel时，\n
     reuqest = {
         'type': 0,
         'name': '',
         'file':None
-    }
-    运行communicate时
+    }\n
+    运行communicate时\n
     reuqest = {
-        optional: '',
+        type: '',
         status: '',
         content:{}
-    }
+    }\n
     :param func:
     :param data:
     :param HOST:
@@ -35,7 +35,7 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
     if data is None:
         return 'Error, empty data!'
     # 监听频道
-    conn = grpc.insecure_channel(HOST + ':' + PORT)
+    conn = grpc.insecure_channel('{}:{}'.format(HOST, PORT))
     # 客户端使用Stub类发送请求,参数为频道,为了绑定链接
     client = data_pb2_grpc.FormDataStub(channel=conn)
     # 判断并运行相应的方法
@@ -49,17 +49,23 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
             response = json.loads(response)
         except ValueError as e:
             logger.error('{} - Cannot convert json string, error: {}'.format(sys._getframe().f_code.co_name, e))
-            response = {'type': -1, 'status': 500, 'content': 'ValueError:Cannot convert json string'}
+            response = {'type': -1, 'status': 500, 'content': {'message': 'ValueError:Cannot convert json string'}}
     else:
         logger.error('{} - Error, the function is not correct!'.format(sys._getframe().f_code.co_name))
-        response = {'type': -1, 'status': 500, 'content': 'ValueError:Client error,the parameter is not correct!'}
+        response = {'type': -1, 'status': 500, 'content': {
+            'message': 'ValueError:Client error,the parameter is not correct!'}}
     return response
 
 
 def upload(data):
-    mod = pickle.dumps(data['file'])
-    actionrequest = data_pb2.actionrequest(type=data['type'], name=data['name'], file=mod)
-    logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
+    try:
+        mod = pickle.dumps(data['file'])
+        msg = json.dumps(data['message'])
+        actionrequest = data_pb2.actionrequest(type=data['type'], name=data['name'], message=msg, file=mod)
+        logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
+    except Exception as e:
+        logger.error('{} - ClientError:{}'.format(sys._getframe().f_code.co_name, e))
+        actionrequest = data_pb2.actionrequest(type=-1, name='error', message='{}', file=None)
     return actionrequest
 
 

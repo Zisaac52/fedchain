@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 import pickle
 import sys
@@ -8,24 +7,25 @@ from concurrent import futures
 
 import grpc
 
-from blockchain.node.base_package import data_pb2, data_pb2_grpc
+from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
 from blockchain.node.entity.MessageEntity import Message
 from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler, \
-    calculate_status_vector_handler, success_handler, error_handler
+    calculate_status_vector_handler, success_handler, error_handler, send_task_handler, distribute_task_handler, \
+    test_network_handler
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MAX_MESSAGE_LENGTH = 100 * 1024 * 1024
 logger = logging.getLogger()
 
 
-def serve(HOST='localhost', PORT='8081'):
+def serve(HOST='localhost', PORT='8080'):
     # 定义服务器并设置最大连接数,corcurrent.futures是一个并发库，类似于线程池的概念
     grpcServer = grpc.server(futures.ThreadPoolExecutor(max_workers=4), options=[
         ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
         ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])  # 创建一个服务器
     data_pb2_grpc.add_FormDataServicer_to_server(FormData(), grpcServer)  # 在服务器中添加派生的接口服务（自己实现了处理函数）
     grpcServer.add_insecure_port(HOST + ':' + PORT)  # 添加监听端口
-    logger.info('server start, listen in - {}'.format(HOST + ':' + PORT))
+    logger.info('Server start, listen in - {}'.format(HOST + ':' + PORT))
     grpcServer.start()  # 启动服务器
     try:
         while True:
@@ -43,7 +43,9 @@ def notify_result(num, msg):
         2: update_node_handler,
         3: calculate_status_vector_handler,
         4: success_handler,
-        5: error_handler
+        5: error_handler,
+        6: distribute_task_handler,
+        10: test_network_handler
         # 3: error
     }
     method = numbers.get(num)
@@ -60,8 +62,9 @@ class FormData(data_pb2_grpc.FormDataServicer):
     # 接收传入的文件bytes，用于向全局模型聚合
     # 返回接收成功的信息
     def uploadModel(self, file_request, context):
-        state_dict = pickle.loads(file_request.file)
-        return data_pb2.actionresponse(message='uploadModel')
+        resp, msg = send_task_handler(file_request)
+        resps = pickle.dumps(resp)
+        return data_pb2.actionresponse(type=1, name='uploadModel', message=json.dumps(msg), file=resps)
 
     # 普通的服务器节点之间交流
     # 负责解析请求数据，返回handler运行数据

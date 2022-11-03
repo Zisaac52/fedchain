@@ -29,15 +29,16 @@ class NodeSN:
         # 自身是第一个节点，则不用注册了
         if config.get('FirstNode'):
             logger.warning('{} - This is the first node or config is incorrect!'.format(sys._getframe().f_code.co_name))
-            return
-        self.sn_handler()
+        else:
+            logger.debug('{} - Not first node!'.format(sys._getframe().f_code.co_name))
+            self.sn_handler()
 
     def sn_handler(self):
-        comun = Message(type=0, status=200, content=self.node_info)
+        comun = Message(type=0, status=200, content={'message': self.node_info})
         entry = config.get('entry_node')
         try:
             resp = runRemoteFunc(config['func']['sendMsg'], data=comun, HOST=entry.get('ip'),
-                                        PORT=entry.get('port'))
+                                PORT=entry.get('port'))
             if resp.get('status') == 200:
                 logger.info('{} - Successful, Info:{}'.format(sys._getframe().f_code.co_name, resp.get('content')))
             else:
@@ -57,4 +58,3 @@ class NodeSN:
         self.server.start()
         self.register_self()
         # 初始化，判断自身是否是第一个节点，否则寻找配置的节点源进行加入
-

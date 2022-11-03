@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import blockchain.node.base_package.data_pb2 as data__pb2
+from blockchain.node.base_package.proto import data_pb2 as proto_dot_data__pb2
 
 
 class FormDataStub(object):
@@ -17,13 +17,13 @@ class FormDataStub(object):
         """
         self.uploadModel = channel.unary_unary(
                 '/base_package.FormData/uploadModel',
-                request_serializer=data__pb2.actionrequest.SerializeToString,
-                response_deserializer=data__pb2.actionresponse.FromString,
+                request_serializer=proto_dot_data__pb2.actionrequest.SerializeToString,
+                response_deserializer=proto_dot_data__pb2.actionresponse.FromString,
                 )
         self.communicate = channel.unary_unary(
                 '/base_package.FormData/communicate',
-                request_serializer=data__pb2.request.SerializeToString,
-                response_deserializer=data__pb2.response.FromString,
+                request_serializer=proto_dot_data__pb2.request.SerializeToString,
+                response_deserializer=proto_dot_data__pb2.response.FromString,
                 )
 
 
@@ -50,13 +50,13 @@ def add_FormDataServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'uploadModel': grpc.unary_unary_rpc_method_handler(
                     servicer.uploadModel,
-                    request_deserializer=data__pb2.actionrequest.FromString,
-                    response_serializer=data__pb2.actionresponse.SerializeToString,
+                    request_deserializer=proto_dot_data__pb2.actionrequest.FromString,
+                    response_serializer=proto_dot_data__pb2.actionresponse.SerializeToString,
             ),
             'communicate': grpc.unary_unary_rpc_method_handler(
                     servicer.communicate,
-                    request_deserializer=data__pb2.request.FromString,
-                    response_serializer=data__pb2.response.SerializeToString,
+                    request_deserializer=proto_dot_data__pb2.request.FromString,
+                    response_serializer=proto_dot_data__pb2.response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -81,8 +81,8 @@ class FormData(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/base_package.FormData/uploadModel',
-            data__pb2.actionrequest.SerializeToString,
-            data__pb2.actionresponse.FromString,
+            proto_dot_data__pb2.actionrequest.SerializeToString,
+            proto_dot_data__pb2.actionresponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -98,7 +98,7 @@ class FormData(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/base_package.FormData/communicate',
-            data__pb2.request.SerializeToString,
-            data__pb2.response.FromString,
+            proto_dot_data__pb2.request.SerializeToString,
+            proto_dot_data__pb2.response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

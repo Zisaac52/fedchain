@@ -1,10 +1,14 @@
 import json
 import logging
+import pickle
 import sys
+from threading import Lock
 
 from blockchain.node.config import config
-from blockchain.node.entity.MessageEntity import Message
+from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
+from blockchain.node.splitFL.SPclient import SPclient
+from blockchain.node.splitFL.SPserver import SPserver
 
 logger = logging.getLogger()
 
@@ -20,18 +24,34 @@ def Singleton(cls):
     return _singleton
 
 
+# -----------------------------------------------------------------------------data
+# 存储常用数据,如节点地址列表
 @Singleton
 class Handler(object):
+    # 在SN下的属性
     SN_NODE_LIST = list()
     EN_NODE_LIST = list()
+    # 在EN下的属性
+    EN_leader = None
+    # 公共属性
+    SPSERVICE = None
+    lock = Lock()
 
     def __init__(self):
+        # 创建学习服务,若是SN节点则使用服务端,EN节点则用客户端
+        if config.get('node_attr').upper() == 'SN':
+            self.SPSERVICE = SPserver()
+        else:
+            self.SPSERVICE = SPclient()
         # 如果不是第一个节点，则将入口节点加入列表
         if not config.get('FirstNode') and len(self.SN_NODE_LIST) == 0:
             self.SN_NODE_LIST.append(config.get('entry_node'))
             logger.info('{} - New list {}'.format(sys._getframe().f_code.co_name, self.SN_NODE_LIST))
 
 
+# -----------------------------------------------------------------------------handler
+# 用于对服务端消息处理，
+# 增加handler时需要向Server类注册
 def register_handler(message):
     """
     节点收到注册消息后执行该方法--0
@@ -40,7 +60,8 @@ def register_handler(message):
     :param message:
     :return:
     """
-    nt = message.get('attr').upper()
+    nt = message.get('message').get('attr').upper()
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, nt))
     if config.get('node_attr').upper() != 'SN' or message is None:
         return Message(type=0, status=500, content={'message': 'Error, empty message or this is not a Server Node！'})
     if nt == 'SN':
@@ -49,12 +70,15 @@ def register_handler(message):
         if ok:
             # 向其他SN节点发送列表
             bordcast(Handler().SN_NODE_LIST, 2)
-            logger.info('{} - {}'.format(sys._getframe().f_code.co_name, Handler().SN_NODE_LIST))
+            logger.debug('{} - SN_NODE_LIST:{}'.format(sys._getframe().f_code.co_name, Handler().SN_NODE_LIST))
             # return Message(type=2, status=200, content={'message': config.get('node_list_sn'), 'nt': nt})
         else:
             return Message(type=0, status=500, content={'message': msg})
     elif nt == 'EN':
-        return Message(type=0, status=200, content={'message': check_and_set_node(message, 'EN')})
+        oken, enmsg = check_and_set_node(message, 'EN')
+        if oken:
+            logger.info('{} - EN_NODE_LIST:{}'.format(sys._getframe().f_code.co_name, Handler().EN_NODE_LIST))
+        return Message(type=0, status=200, content={'message': enmsg})
     else:
         return Message(type=-1, status=500, content={'message': 'parameter is incorrect！'})
 
@@ -75,15 +99,73 @@ def update_node_handler(message):
     :return: dict
     """
     nl = message.get('message')
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, message.get('message')))
     return set_node_list(nl)
 
 
-def calculate_status_vector_handler():
+def calculate_status_vector_handler(message):
     """
     接收节点状态向量，计算，如果节点状态向量满足SN中任一节点，则将返回该节点信息--3
+    从该方法开始，所有传送数据json中使用data，结构为 content-> data
     :return:
     """
-    pass
+    vector = message.get('data')
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, vector))
+    if len(Handler().SN_NODE_LIST) > 0:
+        return Message(type=3, status=200, content={"message": 'Calculate vector successfully！',
+                                                    "data": RegisterData()})
+    else:
+        return Message(type=3, status=200, content={"data": config.get('entry_node')})
+
+
+def send_task_handler(message):
+    """
+    将学习完成的任务发送出去
+    :param message: 传入的整个actionrequest
+    :return: dfx: 服务器计算梯度结果，返回给客户端
+            message: 梯度附带信息
+    """
+    with Handler().lock:
+        # 解码文件
+        state_dict = pickle.loads(message.file)
+        # 取出里面的targets
+        targets = state_dict.get('targets')
+        dfx = Handler().SPSERVICE.train(state_dict.get('dfx'), targets)
+    logger.debug('{} - training...'.format(sys._getframe().f_code.co_name))
+    return dfx, {'message': 'send_task_handler'}
+
+
+def distribute_task_handler(message):
+    """
+    接收后台命令，分发任务，对应type --6 \n
+    消息组成：{task: '', data: {}, tag1: '', tag2: ''....}\n
+    任务类型-> 训练T，停止P，保存模型S，评估模型E \n
+    option = {\n
+        # 训练模型\n
+        'train()': 'T',\n
+        # 暂停\n
+        'pause()': 'P',\n
+        # 保存\n
+        'save()': 'S',\n
+        # 评估模型\n
+        'eval()': 'E',\n
+        # 获取SN列表\n
+        'getSN()': 'GSN',\n
+        # 下载服务端模型\n
+        'getModel()': 'DL'\n
+    }\n
+    :param message: dict->由客户端请求的发送的内容 content
+    :return: Message()
+    """
+    cmd = message.get('task')
+    if cmd == 'T':
+        return Message(type=6, status=200, content={"message": 'success'})
+    elif cmd == 'GSN':
+        return Message(type=6, status=200, content={"message": 'success', 'data': Handler().SN_NODE_LIST})
+    elif cmd == 'DL':
+        return Message(type=6, status=200, content={"message": 'download'})
+    else:
+        return Message(type=-1, status=500, content={"message": 'error'})
 
 
 def success_handler(message):
@@ -103,6 +185,64 @@ def error_handler():
     pass
 
 
+def test_network_handler(message):
+    """
+    测试网络用 --10
+    :return:
+    """
+    if config.get('node_attr').upper() == 'SN':
+        return Message(type=10, status=200, content={"message": 'success'})
+    else:
+        return Message(type=10, status=500, content={"message": 'refused'})
+
+
+# -----------------------------------------------------------------------------EN_Handler
+# 用于处理EN节点相关事务
+def en_train_handler(message=None):
+    """
+    EN节点训练的处理方法
+    供客户端调用
+    :return:
+    """
+    if config.get('node_attr').upper() == 'EN':
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, config.get('node_attr').upper()))
+        Handler().SPSERVICE.train(upload_remote_dict)
+    pass
+
+
+def set_en_leader_handler(node):
+    """
+    EN设置注册节点
+    :param node:
+    :return:
+    """
+    Handler().EN_leader = node
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, node))
+
+
+def upload_remote_dict(dfx, targets):
+    """
+    根据传入的参数运行远程方法获得反向梯度
+    :param dfx:
+    :param targets:
+    :return:
+    """
+    if Handler().EN_leader is None:
+        raise ValueError('No en leader!')
+    else:
+        msg = FormData(type=1, name='mnist', message={'message': 'mnist_Net'},
+                    model_dict={'dfx': dfx, 'targets': targets})
+        resp = runRemoteFunc(config['func']['upload'], data=msg, HOST=Handler().EN_leader.get('ip'),
+                            PORT=Handler().EN_leader.get('port'))
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
+        dfx = pickle.loads(resp.file)
+    return dfx
+
+
+# -----------------------------------------------------------------------------utils
+# 常规工具方法，用于提供handler调用，
+# 不参与直接通信处理
+#
 def bordcast(message, mytype):
     """
     处理需要广播的业务
@@ -114,12 +254,12 @@ def bordcast(message, mytype):
         bordcastMsg = Message(type=mytype, status=200, content={'message': message})
         for sn in Handler().SN_NODE_LIST:
             resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
-                                 PORT=sn.get('port'))
+                                PORT=sn.get('port'))
             if resp.get('status') != 200:
                 logger.error(
                     'bordcast failure,node {}:{}, something wrong about->{}'.format(sn.get('ip'), sn.get('port'), resp))
             else:
-                logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
+                logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))
     else:
         logger.warning('Empty SN list!')
 
@@ -135,10 +275,10 @@ def check_and_set_node(message, attr):
     if len(nlt) != 0:
         # 判断节点是否重复
         for n in nlt:
-            if n.get('ip') + n.get('port') == message.get('ip') + message.get('port'):
+            if '{}:{}'.format(n.get('ip'), n.get('port')) == '{}:{}'.format(message.get('ip'), message.get('port')):
                 return False, 'The current {} node already exists, please do not repeat registration'.format(
                     attr.lower())
-    nlt.append(message)
+    nlt.append(message.get('message'))
     return True, 'Add new node successfully!'
 
 
@@ -154,6 +294,7 @@ def set_node_list(nlist):
         for n in Handler().SN_NODE_LIST:
             n_self.append('{}:{}'.format(n.get('ip'), n.get('port')))
         # logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, Handler().SN_NODE_LIST))
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, nlist))
         for mn in nlist:
             # 排除自身地址
             if '{}:{}'.format(mn.get('ip'), mn.get('port')) != '{}:{}'.format(config.get('ip'), config.get('port')):

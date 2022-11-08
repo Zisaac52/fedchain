@@ -50,7 +50,9 @@ def switch(opt):
         # 获取SN列表
         'getSN()': 'GSN',
         # 下载服务端模型
-        'getModel()': 'DL'
+        'getModel()': 'DL',
+        # 获取状态向量
+        'getVector()': 'SV'
     }
     opts = option.get(opt)
     if opts != '':

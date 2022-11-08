@@ -21,8 +21,8 @@ class SPserver:
         dfx_client = fx_client.grad.clone().detach()
         self.optimizer.step()
         self.count += 32
-        if self.count % 320 == 0:
-            torch.save(self.model_sev.state_dict(), './data/sp/server-{}.pth'.format(self.count))
+        # if self.count % 320 == 0:
+        #     torch.save(self.model_sev.state_dict(), './data/sp/server-{}.pth'.format(self.count))
         return dfx_client
 
 

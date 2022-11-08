@@ -34,7 +34,7 @@ class SPclient:
                 dfx = server_train(cln_fx, targets)
                 fx.backward(dfx)
                 self.optimizer.step()
-                if count % 320 == 0:
-                    torch.save(self.model_cln.state_dict(), './data/sp/client-{}.pth'.format(count))
+                # if count % 320 == 0:
+                #     torch.save(self.model_cln.state_dict(), './data/sp/client-{}.pth'.format(count))
             # acc, loss = evalmodel()
             # print("第{}轮, 准确率:{}, 损失值:{}".format(i, acc, loss))

@@ -11,7 +11,7 @@ from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
 from blockchain.node.entity.MessageEntity import Message
 from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler, \
     calculate_status_vector_handler, success_handler, error_handler, send_task_handler, distribute_task_handler, \
-    test_network_handler
+    test_network_handler, start_self_en_task_handler, get_SN_train_signal_handler, set_en_leader_handler
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MAX_MESSAGE_LENGTH = 100 * 1024 * 1024
@@ -45,6 +45,9 @@ def notify_result(num, msg):
         4: success_handler,
         5: error_handler,
         6: distribute_task_handler,
+        7: start_self_en_task_handler,
+        8: get_SN_train_signal_handler,
+        9: set_en_leader_handler,
         10: test_network_handler
         # 3: error
     }

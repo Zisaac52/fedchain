@@ -7,7 +7,6 @@ from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, RegisterData
 from blockchain.node.service.Server import serve
 from blockchain.node.service.client import runRemoteFunc
-from blockchain.node.service.handler import set_en_leader_handler, en_train_handler
 from blockchain.node.vector_collect import get_endNode_perfomance
 
 logger = logging.getLogger()
@@ -23,6 +22,7 @@ class NodeEN:
             self.port = port
         # 读取自己节点的属性
         if self.port != '' or self.port is not None:
+            self.AID = '{}:{}'.format(self.node_info.get('ip'), self.port)
             # 创建服务端
             self.server = multiprocessing.Process(target=serve, args=(self.node_info.get('ip'), self.port,))
         else:
@@ -38,14 +38,17 @@ class NodeEN:
         # 获取到向量,放入元组中
         tspeed = get_endNode_perfomance()
         vector = (0, 0, 0, tspeed,)
-        comun = Message(type=3, status=200, content={'data': vector})
+        comun = Message(type=3, status=200, content={'message': self.AID, 'data': vector})
         ok, resp = self.sender(comun, entry)
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))
         # 向待注册SN发送注册信息，完成注册
         if ok:
             reginfo = Message(type=0, status=200, content={'message': self.node_info})
             logger.debug('{} - {}' .format(sys._getframe().f_code.co_name, reginfo))
             self.sender(reginfo, resp.get('content').get('data'))
-            set_en_leader_handler(resp.get('content').get('data'))
+            # 给EN节点自身设置一个leader
+            leader = Message(type=9, status=200, content=resp.get('content'))
+            self.sender(leader, self.node_info)
 
     def sender(self, mesg, destination):
         """
@@ -54,6 +57,7 @@ class NodeEN:
         :param destination: {ip:' ' , port: ' '}
         :return: bool, response
         """
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, mesg))
         try:
             resp = runRemoteFunc(config['func']['sendMsg'], data=mesg, HOST=destination.get('ip'),
                                 PORT=destination.get('port'))
@@ -64,10 +68,7 @@ class NodeEN:
                 raise Exception("Server error, response: {}".format(resp))
         except Exception as e:
             logger.error('{} - {} - {}'.format(self.__class__.__name__, sys._getframe().f_code.co_name, e))
-
-    def train(self):
-        logger.debug('{} - start training'.format(sys._getframe().f_code.co_name))
-        en_train_handler()
+            return False, None
 
     # {
     #   optional: '',
@@ -80,8 +81,4 @@ class NodeEN:
     def startNode(self):
         self.server.start()
         self.register_self()
-        # self.train()
-        # while True:
-        #     time.sleep(20)
-        #     self.train()
         # 初始化，判断自身是否是第一个节点，否则寻找配置的节点源进行加入

@@ -7,13 +7,14 @@ import torch
 from fl.loadTrainData import load2MnistLoader
 from fl.model import mnist_Net
 logger = logging.getLogger()
+# torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cpu')
 
 
 def get_endNode_perfomance():
     logger.info('{} - Start evaluating performance...'.format(sys._getframe().f_code.co_name))
     model = mnist_Net()
-    if torch.cuda.is_available():
-        model.cuda()
+    model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.0001)
     datasets, _ = load2MnistLoader()
     train_loader = torch.utils.data.DataLoader(datasets, batch_size=32, shuffle=True)
@@ -25,9 +26,8 @@ def get_endNode_perfomance():
     for data in train_loader:
         imgs, targets = data
         count += len(data)
-        if torch.cuda.is_available():
-            imgs = imgs.cuda()
-            targets = targets.cuda()
+        imgs = imgs.to(device)
+        targets = targets.to(device)
         # 优化器优化模型
         optimizer.zero_grad()
         # 开始训练

@@ -62,7 +62,7 @@ def upload(data):
         mod = pickle.dumps(data['file'])
         msg = json.dumps(data['message'])
         actionrequest = data_pb2.actionrequest(type=data['type'], name=data['name'], message=msg, file=mod)
-        logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
+        # logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
     except Exception as e:
         logger.error('{} - ClientError:{}'.format(sys._getframe().f_code.co_name, e))
         actionrequest = data_pb2.actionrequest(type=-1, name='error', message='{}', file=None)

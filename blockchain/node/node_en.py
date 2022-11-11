@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import sys
-import time
 
 from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, RegisterData

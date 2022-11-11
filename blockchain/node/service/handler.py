@@ -5,6 +5,8 @@ import random
 import sys
 from threading import Lock
 
+import torch
+
 from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
@@ -38,6 +40,9 @@ class Handler(object):
     SPSERVICE = None
     # 保存状态向量
     STVECTOR = None
+    # 服务端模型，只有SN有
+    SEVERMODEL = None
+    # 锁
     lock = Lock()
 
     def __init__(self):
@@ -137,9 +142,14 @@ def send_task_handler(message):
     with Handler().lock:
         # 解码文件
         state_dict = pickle.loads(message.file)
+        # 取出里面的信息
+        apdmsg = json.loads(message.message)
         # 取出里面的targets
         targets = state_dict.get('targets')
-        dfx = Handler().SPSERVICE.train(state_dict.get('dfx'), targets)
+        dfx, model = Handler().SPSERVICE.train(state_dict.get('dfx'), targets, apdmsg.get('flag'))
+        if model is not None:
+            # Handler().SPSERVICE.model_sev
+            torch.save(model.state_dict(), './data/sp/server-{}.pth'.format(apdmsg.get('epoch')))
     logger.debug('{} - training...'.format(sys._getframe().f_code.co_name))
     return dfx, {'message': 'send_task_handler'}
 
@@ -258,18 +268,19 @@ def set_en_leader_handler(message):
     logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
 
 
-def upload_remote_dict(dfx, targets):
+def upload_remote_dict(dfx, targets, flag, epoch):
     """
     根据传入的参数运行远程方法获得反向梯度
+    :param flag: 当前是否完成了一轮
+    :param epoch:
     :param dfx:
     :param targets:
     :return:
     """
-    logger.debug('{} - leader: {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
     if Handler().EN_leader is None:
         raise ValueError('No en leader!')
     else:
-        msg = FormData(type=1, name='mnist', message={'message': 'mnist_Net'},
+        msg = FormData(type=1, name='mnist', message={'message': 'mnist_Net', 'flag': flag, 'epoch': epoch},
                     model_dict={'dfx': dfx, 'targets': targets})
         resp = runRemoteFunc(config['func']['upload'], data=msg, HOST=Handler().EN_leader.get('ip'),
                             PORT=Handler().EN_leader.get('port'))

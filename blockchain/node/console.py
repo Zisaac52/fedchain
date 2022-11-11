@@ -24,7 +24,7 @@ def console_cmd(entry):
         print(e)
         return
     while True:
-        cmd = input('[Console({}:{})$]:'.format(entry.get('ip'), entry.get('port')))
+        cmd = input('[Console({}:{})]$'.format(entry.get('ip'), entry.get('port')))
         if cmd.lower() == 'quit()' or cmd.lower() == 'exit()':
             sys.exit(0)
         op = switch(cmd)

@@ -4,6 +4,11 @@ import logging
 import socket
 import time
 
+import torch
+
+from blockchain.node.splitFL.SPeval import evalmodel
+from blockchain.node.splitFL.splitmodel import mnist_Net_client, mnist_Net_server
+
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
 # fh = logging.FileHandler('test1.log',encoding='utf-8')

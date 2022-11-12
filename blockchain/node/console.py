@@ -52,7 +52,9 @@ def switch(opt):
         # 下载服务端模型
         'getModel()': 'DL',
         # 获取状态向量
-        'getVector()': 'SV'
+        'getVector()': 'SV',
+        # 开启联邦学习训练
+        'trainFL()': 'FLT'
     }
     opts = option.get(opt)
     if opts != '':

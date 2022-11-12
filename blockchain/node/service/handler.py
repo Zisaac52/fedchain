@@ -3,6 +3,7 @@ import logging
 import pickle
 import random
 import sys
+import threading
 from threading import Lock
 
 import torch
@@ -10,6 +11,7 @@ import torch
 from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
+from blockchain.node.service.handlerFL import start_fl_train_handler, calcdiff_handler
 from blockchain.node.splitFL.SPclient import SPclient
 from blockchain.node.splitFL.SPserver import SPserver
 
@@ -151,6 +153,7 @@ def send_task_handler(message):
         if model is not None:
             # Handler().SPSERVICE.model_sev
             torch.save(model.state_dict(), './data/sp/server-{}.pth'.format(apdmsg.get('epoch')))
+            logger.info('{} - epoch:{}'.format(sys._getframe().f_code.co_name, apdmsg.get('epoch')))
     logger.debug('{} - training...'.format(sys._getframe().f_code.co_name))
     return dfx, {'message': 'send_task_handler'}
 
@@ -191,6 +194,10 @@ def distribute_task_handler(message):
         return Message(type=6, status=200, content={"message": 'download'})
     elif cmd == 'SV':
         return Message(type=6, status=200, content={'message': 'success', 'data': Handler().STVECTOR})
+    elif cmd == 'FLT':
+        msg = {'message': 'train', 'cmd': cmd, 'epoch': 15}
+        res = bordcast(msg, 20, 'SN')
+        return Message(type=6, status=200, content={"message": res})
     else:
         return Message(type=-1, status=500, content={"message": 'error'})
 
@@ -244,6 +251,19 @@ def test_network_handler(message):
         return Message(type=10, status=500, content={"message": 'refused'})
 
 
+def test_fl_handler(message):
+    """
+    加载fl的训练网络进行训练 --20
+    :param message: content -> dict{}
+    :return: msg
+    """
+    msg = {'node': Handler().EN_NODE_LIST[0], 'epoch': 15}
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, message))
+    if config.get('node_attr').upper() == 'SN':
+        res = start_fl_train_handler(msg)
+        return res
+
+
 # -----------------------------------------------------------------------------EN_Handler
 # 用于处理EN节点相关事务
 def en_train_handler(message=None):
@@ -282,12 +302,25 @@ def upload_remote_dict(dfx, targets, flag, epoch):
         raise ValueError('No en leader!')
     else:
         msg = FormData(type=1, name='mnist', message={'message': 'mnist_Net', 'flag': flag, 'epoch': epoch},
-                    model_dict={'dfx': dfx, 'targets': targets})
+                       model_dict={'dfx': dfx, 'targets': targets})
         resp = runRemoteFunc(config['func']['upload'], data=msg, HOST=Handler().EN_leader.get('ip'),
-                            PORT=Handler().EN_leader.get('port'))
-        logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
+                             PORT=Handler().EN_leader.get('port'))
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
         dfx = pickle.loads(resp.file)
     return dfx
+
+
+def get_fl_diff_handler(message):
+    """
+    获取到客户端的diff，传给服务端聚合
+    :param message: actionrequest -> type=10, name='mnist', message={'message': 'mnist_Net', 'version': ver}, file
+    :return:
+    """
+    f = pickle.loads(message.file)
+    msg = json.loads(message.message)
+    diff, msgs = calcdiff_handler(f, msg.get('version'))
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, msgs))
+    return diff, msgs
 
 
 # -----------------------------------------------------------------------------utils
@@ -308,14 +341,21 @@ def bordcast(message, mytype, nodeattr):
     if len(nodelist) > 0:
         bordcastMsg = Message(type=mytype, status=200, content=message)
         for sn in nodelist:
-            resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
-                                PORT=sn.get('port'))
-            if resp.get('status') != 200:
-                logger.error(
-                    'bordcast failure,node {}:{}, something wrong about->{}'.format(sn.get('ip'), sn.get('port'), resp))
-                error_list.append({'ip': sn.get('ip'), 'port': sn.get('port'), 'response': resp})
-            else:
-                logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
+            # 多线程发送，防止阻塞
+            def run():
+                resp = runRemoteFunc(config['func']['sendMsg'], data=bordcastMsg, HOST=sn.get('ip'),
+                                     PORT=sn.get('port'))
+                if resp.get('status') != 200:
+                    logger.error(
+                        'bordcast failure,node {}:{}, something wrong about->{}'.format(sn.get('ip'), sn.get('port'),
+                                                                                        resp))
+                    error_list.append({'ip': sn.get('ip'), 'port': sn.get('port'), 'response': resp})
+                else:
+                    logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
+
+            t = threading.Thread(target=run)
+            t.setDaemon(True)  # 把子进程设置为守护线程，必须在start()之前设置
+            t.start()
         return error_list
     else:
         logger.warning('Empty SN list!')

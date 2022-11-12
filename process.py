@@ -1,8 +1,10 @@
 import datetime
 import logging
 import os
+import time
 
 import psutil
+
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
 # fh = logging.FileHandler('test1.log',encoding='utf-8')
@@ -14,6 +16,7 @@ logger.setLevel(logging.INFO)  # 设置日志的级别
 ch.setFormatter(formatter)
 # logger.addHandler(fh) #logger对象可以添加多个fh和ch对象
 logger.addHandler(ch)
+
 
 def get_pid_memory(pid):
     """
@@ -49,6 +52,39 @@ def test(n):
     return pid
 
 
+def getProcessInfo(p):
+    """取出指定进程占用的进程名，进程ID，进程实际内存, 虚拟内存,CPU使用率
+    """
+    try:
+        cpu = p.cpu_percent(interval=0)
+        rss, vms, mms = 0, 0, 0
+        print(p.memory_info())
+        name = p.name
+        pid = p.pid
+    except psutil.NoSuchProcess as e:
+        name = "Closed_Process"
+        pid = 0
+        rss = 0
+        vms = 0
+        mms = 0
+        cpu = 0
+    return [name, pid, rss, vms, mms, cpu]
+
+
+def getAllProcessInfo():
+    """取出全部进程的进程名，进程ID，进程实际内存, 虚拟内存,CPU使用率
+    """
+    instances = []
+    all_processes = list(psutil.process_iter())
+    for proc in all_processes:
+        proc.cpu_percent(interval=0)
+    # 此处sleep1秒是取正确取出CPU使用率的重点
+    time.sleep(1)
+    for proc in all_processes:
+        instances.append(getProcessInfo(proc))
+    return instances
+
+
 if __name__ == '__main__':
     # get_process_memory('python')
     #
@@ -57,6 +93,7 @@ if __name__ == '__main__':
     # test_p.start()
     # print("test_p PID:{}".format(test_p.pid))
     # print("Main PID:{}".format(os.getpid()))
+    # ins = getAllProcessInfo()
     while True:
         logger.info('cpu(%) - {}'.format(psutil.cpu_percent(interval=1)))
     # test_m = multiprocessing.Process(target=get_pid_memory, args=(test_p.pid,))

@@ -11,7 +11,8 @@ from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
 from blockchain.node.entity.MessageEntity import Message
 from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler, \
     calculate_status_vector_handler, success_handler, error_handler, send_task_handler, distribute_task_handler, \
-    test_network_handler, start_self_en_task_handler, get_SN_train_signal_handler, set_en_leader_handler
+    test_network_handler, start_self_en_task_handler, get_SN_train_signal_handler, set_en_leader_handler, \
+    test_fl_handler, get_fl_diff_handler
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MAX_MESSAGE_LENGTH = 100 * 1024 * 1024
@@ -48,7 +49,8 @@ def notify_result(num, msg):
         7: start_self_en_task_handler,
         8: get_SN_train_signal_handler,
         9: set_en_leader_handler,
-        10: test_network_handler
+        10: test_network_handler,
+        20: test_fl_handler
         # 3: error
     }
     method = numbers.get(num)
@@ -65,7 +67,10 @@ class FormData(data_pb2_grpc.FormDataServicer):
     # 接收传入的文件bytes，用于向全局模型聚合
     # 返回接收成功的信息
     def uploadModel(self, file_request, context):
-        resp, msg = send_task_handler(file_request)
+        if file_request.type == 10:
+            resp, msg = get_fl_diff_handler(file_request)
+        else:
+            resp, msg = send_task_handler(file_request)
         resps = pickle.dumps(resp)
         return data_pb2.actionresponse(type=1, name='uploadModel', message=json.dumps(msg), file=resps)
 

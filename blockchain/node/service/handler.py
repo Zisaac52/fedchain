@@ -49,6 +49,7 @@ class Handler(object):
         # 创建学习服务,若是SN节点则使用服务端,EN节点则用客户端
         if config.get('node_attr').upper() == 'SN':
             self.SPSERVICE = SPserver()
+            torch.save(self.SPSERVICE.model_sev.state_dict(), './data/sp/server-0.pth')
         else:
             self.SPSERVICE = SPclient()
         # 如果不是第一个节点，则将入口节点加入列表
@@ -210,7 +211,7 @@ def get_SN_train_signal_handler(message):
     接收SN信号，开始训练 --8
     :return:
     """
-    logger.debug('start training!')
+    logger.info('{} - start training!'.format(sys._getframe().f_code.co_name))
     en_train_handler()
     return Message(type=8, status=200, content={"message": 'success'})
 
@@ -265,7 +266,7 @@ def set_en_leader_handler(message):
     :return:
     """
     Handler().EN_leader = message.get('data')
-    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
+    logger.info('{} - {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
 
 
 def upload_remote_dict(dfx, targets, flag, epoch):
@@ -284,7 +285,7 @@ def upload_remote_dict(dfx, targets, flag, epoch):
                     model_dict={'dfx': dfx, 'targets': targets})
         resp = runRemoteFunc(config['func']['upload'], data=msg, HOST=Handler().EN_leader.get('ip'),
                             PORT=Handler().EN_leader.get('port'))
-        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
+        logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
         dfx = pickle.loads(resp.file)
     return dfx
 
@@ -314,7 +315,7 @@ def bordcast(message, mytype, nodeattr):
                     'bordcast failure,node {}:{}, something wrong about->{}'.format(sn.get('ip'), sn.get('port'), resp))
                 error_list.append({'ip': sn.get('ip'), 'port': sn.get('port'), 'response': resp})
             else:
-                logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))
+                logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
         return error_list
     else:
         logger.warning('Empty SN list!')

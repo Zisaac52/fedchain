@@ -1,7 +1,11 @@
+import logging
+import sys
+
 import torch
 
 from blockchain.node.splitFL.splitmodel import mnist_Net_client
 from fl.loadTrainData import load2MnistLoader
+logger = logging.getLogger()
 
 
 class SPclient:
@@ -15,10 +19,13 @@ class SPclient:
 
     # 客户端先训练，完成后传入到服务端计算剩余的东西
     def train(self, server_train):
+        ep = 15
+        path = './data/ep/'
+        torch.save(self.model_cln.state_dict(), '{}client-0.pth'.format(path))
         self.model_cln.train()
         flag = False
         epoch = 0
-        for i in range(1):
+        for i in range(ep):
             epoch += 1
             for data in self.train_loader:
                 imgs, targets = data
@@ -36,6 +43,7 @@ class SPclient:
                 fx.backward(dfx)
                 self.optimizer.step()
             flag = True
-            torch.save(self.model_cln.state_dict(), './data/sp/client-{}.pth'.format(epoch))
+            torch.save(self.model_cln.state_dict(), '{}client-{}.pth'.format(path, epoch))
             # acc, loss = evalmodel()
             # print("第{}轮, 准确率:{}, 损失值:{}".format(i, acc, loss))
+        logger.info('{} - 训练完成，共{}趟'.format(sys._getframe().f_code.co_name, ep))

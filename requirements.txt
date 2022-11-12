@@ -8,3 +8,4 @@ tqdm
 grpcio
 protobuf
 grpcio-tools
+psutil~=5.9.4

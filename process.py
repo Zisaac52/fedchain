@@ -1,8 +1,19 @@
 import datetime
+import logging
 import os
 
 import psutil
-
+logger = logging.getLogger()
+# 创建一个handler，用于写入日志文件
+# fh = logging.FileHandler('test1.log',encoding='utf-8')
+# 再创建一个handler，用于输出到控制台
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger.setLevel(logging.INFO)  # 设置日志的级别
+# fh.setFormatter(formatter)#设置的日志的输出
+ch.setFormatter(formatter)
+# logger.addHandler(fh) #logger对象可以添加多个fh和ch对象
+logger.addHandler(ch)
 
 def get_pid_memory(pid):
     """
@@ -47,6 +58,6 @@ if __name__ == '__main__':
     # print("test_p PID:{}".format(test_p.pid))
     # print("Main PID:{}".format(os.getpid()))
     while True:
-        print('{} - {}'.format(datetime.datetime.now(), psutil.cpu_percent(interval=1)))
+        logger.info('cpu(%) - {}'.format(psutil.cpu_percent(interval=1)))
     # test_m = multiprocessing.Process(target=get_pid_memory, args=(test_p.pid,))
     # test_m.start()

@@ -23,7 +23,9 @@ class Client:
         # 加载数据集
         self._local_model = copy.deepcopy(model)
         self._gobal_model = copy.deepcopy(model)
+        # 模型版本
         self.g_version = mod_version
+        # 学习率
         self.learning_rate = lr
         self.id = 0
         self._dataLoader = self._randomLoad(self.datasets)

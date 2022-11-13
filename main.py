@@ -15,7 +15,7 @@ logger = logging.getLogger()
 # 再创建一个handler，用于输出到控制台
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger.setLevel(logging.DEBUG)  # 设置日志的级别
+logger.setLevel(logging.INFO)  # 设置日志的级别
 # fh.setFormatter(formatter)#设置的日志的输出
 ch.setFormatter(formatter)
 # logger.addHandler(fh) #logger对象可以添加多个fh和ch对象

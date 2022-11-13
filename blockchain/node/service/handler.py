@@ -195,7 +195,7 @@ def distribute_task_handler(message):
     elif cmd == 'SV':
         return Message(type=6, status=200, content={'message': 'success', 'data': Handler().STVECTOR})
     elif cmd == 'FLT':
-        msg = {'message': 'train', 'cmd': cmd, 'epoch': 15}
+        msg = {'message': 'train', 'cmd': cmd, 'epoch': 20}
         res = bordcast(msg, 20, 'SN')
         return Message(type=6, status=200, content={"message": res})
     else:

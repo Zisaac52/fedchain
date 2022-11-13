@@ -13,13 +13,13 @@ class SPclient:
         self.model_cln = mnist_Net_client()
         if torch.cuda.is_available():
             self.model_cln.cuda()
-        self.optimizer = torch.optim.SGD(self.model_cln.parameters(), lr=0.01, momentum=0.0001)
+        self.optimizer = torch.optim.SGD(self.model_cln.parameters(), lr=0.001, momentum=0.0001)
         datasets, _ = load2MnistLoader()
         self.train_loader = torch.utils.data.DataLoader(datasets, batch_size=32, shuffle=True)
 
     # 客户端先训练，完成后传入到服务端计算剩余的东西
     def train(self, server_train):
-        ep = 15
+        ep = 20
         path = './data/ep/'
         torch.save(self.model_cln.state_dict(), '{}client-0.pth'.format(path))
         self.model_cln.train()

@@ -7,9 +7,9 @@ from fl.modelEval import model_eval
 
 
 def testFL():
-    for i in range(15):
+    for i in range(20):
         model = mnist_Net()
-        stict = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/flm/gmodel-{}.pth'.format(i))
+        stict = torch.load('data/flm/gmodel-{}.pth'.format(i))
         model.load_state_dict(stict)
         if torch.cuda.is_available():
             model.cuda()
@@ -18,11 +18,11 @@ def testFL():
 
 
 def testSpfl():
-    for i in range(16):
+    for i in range(20):
         model_sev = mnist_Net_server()
         model_cln = mnist_Net_client()
-        stictsp = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/双EN测试数据/sp/server-{}.pth'.format(i))
-        stictep = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/双EN测试数据/ep/client-{}.pth'.format(i))
+        stictsp = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/0.001-20-32-1/sp/server-{}.pth'.format(i))
+        stictep = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/0.001-20-32-1/ep/client-{}.pth'.format(i))
         model_sev.load_state_dict(stictsp)
         model_cln.load_state_dict(stictep)
         if torch.cuda.is_available():
@@ -34,3 +34,4 @@ def testSpfl():
 
 if __name__ == '__main__':
     testSpfl()
+    # testFL()

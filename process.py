@@ -95,6 +95,8 @@ if __name__ == '__main__':
     # print("Main PID:{}".format(os.getpid()))
     # ins = getAllProcessInfo()
     while True:
-        logger.info('cpu(%) - {}'.format(psutil.cpu_percent(interval=1)))
+        logger.info('network - sent:{},recv:{}'.format(psutil.net_io_counters().bytes_sent/8192,
+                                                    psutil.net_io_counters().bytes_recv/8192))
+        time.sleep(5)
     # test_m = multiprocessing.Process(target=get_pid_memory, args=(test_p.pid,))
     # test_m.start()

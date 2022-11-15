@@ -257,7 +257,7 @@ def test_fl_handler(message):
     :param message: content -> dict{}
     :return: msg
     """
-    msg = {'node': Handler().EN_NODE_LIST[0], 'epoch': 15}
+    msg = {'node': Handler().EN_NODE_LIST[0], 'epoch': 20}
     logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, message))
     if config.get('node_attr').upper() == 'SN':
         res = start_fl_train_handler(msg)

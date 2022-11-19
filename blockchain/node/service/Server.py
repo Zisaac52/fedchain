@@ -78,6 +78,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
     # 负责解析请求数据，返回handler运行数据
     def communicate(self, request, context):
         try:
+            logger.info('{} - {}'.format(sys._getframe().f_code.co_name, request.message))
             json_dict = json.loads(request.message)
             resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         except RuntimeError as e:

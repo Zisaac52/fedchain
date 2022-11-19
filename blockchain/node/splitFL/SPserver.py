@@ -2,7 +2,7 @@ import torch
 
 from blockchain.node.splitFL.splitmodel import mnist_Net_server
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# device = torch.device('cpu')
+ldevice = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class SPserver:
@@ -11,7 +11,7 @@ class SPserver:
     def __init__(self):
         self.model_sev = mnist_Net_server()
         self.path = './data/sp/'
-        self.model_sev.load_state_dict(torch.load('{}server-0.pth'.format(self.path)))
+        self.model_sev.load_state_dict(torch.load('{}server-0.pth'.format(self.path), map_location=ldevice))
         self.model_sev.to(device)
         self.optimizer = torch.optim.SGD(self.model_sev.parameters(), lr=0.01, momentum=0.0001)
         self.epoch = 0

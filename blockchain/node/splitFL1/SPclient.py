@@ -7,14 +7,14 @@ from fl.loadTrainData import load2MnistLoader
 
 logger = logging.getLogger()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# device = torch.device('cpu')
+ldevice = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class SPclient:
     def __init__(self):
         self.model_cln = mnist_Net_client()
         self.path = './data/ep1/'
-        self.model_cln.load_state_dict(torch.load('{}client-0.pth'.format(self.path)))
+        self.model_cln.load_state_dict(torch.load('{}client-0.pth'.format(self.path), map_location=ldevice))
         self.model_cln.to(device)
         self.optimizer = torch.optim.SGD(self.model_cln.parameters(), lr=0.001, momentum=0.0001)
         datasets, _ = load2MnistLoader()

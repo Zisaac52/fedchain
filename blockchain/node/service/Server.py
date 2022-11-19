@@ -78,13 +78,13 @@ class FormData(data_pb2_grpc.FormDataServicer):
     # 负责解析请求数据，返回handler运行数据
     def communicate(self, request, context):
         try:
-            logger.info('{} - {}'.format(sys._getframe().f_code.co_name, request.message))
             json_dict = json.loads(request.message)
             resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         except RuntimeError as e:
             resp = Message(type=-1, status=500, content={'{}'.format(e)})
             logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
         if resp is not None:
+            logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
             return data_pb2.response(message=json.dumps(resp))
         else:
             resp = Message(type=-1, status=200, content={'message': 'no message!'})

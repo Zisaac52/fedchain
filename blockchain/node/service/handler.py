@@ -374,7 +374,8 @@ def check_and_set_node(message, attr):
             if '{}:{}'.format(n.get('ip'), n.get('port')) == '{}:{}'.format(msg.get('ip'), msg.get('port')):
                 return False, 'The current {} node already exists, please do not repeat registration'.format(
                     attr.lower())
-    nlt.append(message.get('message'))
+    logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, msg))
+    nlt.append(msg)
     return True, 'Add new node successfully!'
 
 

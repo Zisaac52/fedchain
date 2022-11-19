@@ -82,7 +82,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
             json_dict = json.loads(request.message)
             resp = notify_result(json_dict.get('type'), json_dict.get('content'))
         except RuntimeError as e:
-            resp = Message(type=-1, status=500, content={'{}'.format(e)})
+            resp = Message(type=-1, status=500, content={'message': e})
             logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
         if resp is not None:
             logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))

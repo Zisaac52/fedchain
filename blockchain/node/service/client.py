@@ -6,6 +6,7 @@ import sys
 import grpc
 
 from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
+from blockchain.node.service.JsonEncoder import SetEncoder
 
 logger = logging.getLogger()
 
@@ -60,7 +61,7 @@ def runRemoteFunc(func='', data=None, HOST='127.0.0.1', PORT='8080'):
 def upload(data):
     try:
         mod = pickle.dumps(data['file'])
-        msg = json.dumps(data['message'])
+        msg = json.dumps(data['message'], cls=SetEncoder)
         actionrequest = data_pb2.actionrequest(type=data['type'], name=data['name'], message=msg, file=mod)
         # logger.info('{} - actionrequest: {}'.format(sys._getframe().f_code.co_name, actionrequest.type))
     except Exception as e:
@@ -74,5 +75,5 @@ def communication(data):
     if isinstance(data, str):
         request = data
     else:
-        request = json.dumps(data)
+        request = json.dumps(data, cls=SetEncoder)
     return request

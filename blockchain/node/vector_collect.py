@@ -7,8 +7,8 @@ import torch
 from fl.loadTrainData import load2MnistLoader
 from fl.model import mnist_Net
 logger = logging.getLogger()
-# torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = torch.device('cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cpu')
 
 
 def get_endNode_perfomance():

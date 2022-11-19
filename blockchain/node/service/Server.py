@@ -9,6 +9,7 @@ import grpc
 
 from blockchain.node.base_package.proto import data_pb2_grpc, data_pb2
 from blockchain.node.entity.MessageEntity import Message
+from blockchain.node.service.JsonEncoder import SetEncoder
 from blockchain.node.service.handler import register_handler, update_node_handler, networkinfo_handler, \
     calculate_status_vector_handler, success_handler, error_handler, send_task_handler, distribute_task_handler, \
     test_network_handler, start_self_en_task_handler, get_SN_train_signal_handler, set_en_leader_handler, \
@@ -72,7 +73,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
         else:
             resp, msg = send_task_handler(file_request)
         resps = pickle.dumps(resp)
-        return data_pb2.actionresponse(type=1, name='uploadModel', message=json.dumps(msg), file=resps)
+        return data_pb2.actionresponse(type=1, name='uploadModel', message=json.dumps(msg, cls=SetEncoder), file=resps)
 
     # 普通的服务器节点之间交流
     # 负责解析请求数据，返回handler运行数据
@@ -85,7 +86,8 @@ class FormData(data_pb2_grpc.FormDataServicer):
             logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
         if resp is not None:
             logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
-            return data_pb2.response(message=json.dumps(resp))
+            return data_pb2.response(message=json.dumps(resp, cls=SetEncoder))
         else:
             resp = Message(type=-1, status=200, content={'message': 'no message!'})
-            return data_pb2.response(message=json.dumps(resp))
+            return data_pb2.response(message=json.dumps(resp, cls=SetEncoder))
+

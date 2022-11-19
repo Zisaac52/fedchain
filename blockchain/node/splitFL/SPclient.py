@@ -8,6 +8,7 @@ from PIL import Image
 from blockchain.node.splitFL.splitmodel import mnist_Net_client
 from fl.loadTrainData import load2MnistLoader
 logger = logging.getLogger()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class SPclient:
@@ -15,8 +16,7 @@ class SPclient:
         self.model_cln = mnist_Net_client()
         self.path = './data/ep/'
         self.model_cln.load_state_dict(torch.load('{}client-0.pth'.format(self.path)))
-        if torch.cuda.is_available():
-            self.model_cln.cuda()
+        self.model_cln.to(device)
         self.optimizer = torch.optim.SGD(self.model_cln.parameters(), lr=0.001, momentum=0.0001)
         datasets, _ = load2MnistLoader()
         self.train_loader = torch.utils.data.DataLoader(datasets, batch_size=32, shuffle=True)
@@ -33,9 +33,8 @@ class SPclient:
             epoch += 1
             for data in self.train_loader:
                 imgs, targets = data
-                if torch.cuda.is_available():
-                    imgs = imgs.cuda()
-                    targets = targets.cuda()
+                imgs = imgs.to(device)
+                targets = targets.to(device)
                 # 优化器优化模型
                 self.optimizer.zero_grad()
                 # 开始训练

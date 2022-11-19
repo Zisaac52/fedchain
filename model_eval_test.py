@@ -21,8 +21,8 @@ def testSpfl():
     for i in range(20):
         model_sev = mnist_Net_server()
         model_cln = mnist_Net_client()
-        stictsp = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/0.001-20-32-1/sp/server-{}.pth'.format(i))
-        stictep = torch.load('E:/研究生/研究/AIOT/实验/mnist的SPFL与FL的卸载效果对比/0.001-20-32-1/ep/client-{}.pth'.format(i))
+        stictsp = torch.load('D:/PycharmProjects/BlockchainAIOT/blockchain/splitFL1/data/sp/server-{}.pth'.format(i))
+        stictep = torch.load('D:/PycharmProjects/BlockchainAIOT/blockchain/splitFL1/data/ep/client-{}.pth'.format(i))
         model_sev.load_state_dict(stictsp)
         model_cln.load_state_dict(stictep)
         if torch.cuda.is_available():

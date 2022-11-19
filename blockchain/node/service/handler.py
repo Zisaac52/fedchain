@@ -12,8 +12,8 @@ from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
 from blockchain.node.service.handlerFL import start_fl_train_handler, calcdiff_handler
-from blockchain.node.splitFL.SPclient import SPclient
-from blockchain.node.splitFL.SPserver import SPserver
+from blockchain.node.splitFL1.SPclient import SPclient
+from blockchain.node.splitFL1.SPserver import SPserver
 
 logger = logging.getLogger()
 
@@ -48,6 +48,7 @@ class Handler(object):
     lock = Lock()
 
     def __init__(self):
+
         # 创建学习服务,若是SN节点则使用服务端,EN节点则用客户端
         if config.get('node_attr').upper() == 'SN':
             self.SPSERVICE = SPserver()
@@ -149,11 +150,7 @@ def send_task_handler(message):
         apdmsg = json.loads(message.message)
         # 取出里面的targets
         targets = state_dict.get('targets')
-        dfx, model = Handler().SPSERVICE.train(state_dict.get('dfx'), targets, apdmsg.get('flag'))
-        if model is not None:
-            # Handler().SPSERVICE.model_sev
-            torch.save(model.state_dict(), './data/sp/server-{}.pth'.format(apdmsg.get('epoch')))
-            logger.info('{} - epoch:{}'.format(sys._getframe().f_code.co_name, apdmsg.get('epoch')))
+        dfx = Handler().SPSERVICE.train(state_dict.get('dfx'), targets, apdmsg.get('flag'), apdmsg.get('epoch'))
     logger.debug('{} - training...'.format(sys._getframe().f_code.co_name))
     return dfx, {'message': 'send_task_handler'}
 
@@ -302,9 +299,9 @@ def upload_remote_dict(dfx, targets, flag, epoch):
         raise ValueError('No en leader!')
     else:
         msg = FormData(type=1, name='mnist', message={'message': 'mnist_Net', 'flag': flag, 'epoch': epoch},
-                       model_dict={'dfx': dfx, 'targets': targets})
+                    model_dict={'dfx': dfx, 'targets': targets})
         resp = runRemoteFunc(config['func']['upload'], data=msg, HOST=Handler().EN_leader.get('ip'),
-                             PORT=Handler().EN_leader.get('port'))
+                            PORT=Handler().EN_leader.get('port'))
         logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp.message))
         dfx = pickle.loads(resp.file)
     return dfx

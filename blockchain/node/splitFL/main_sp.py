@@ -6,5 +6,5 @@ if __name__ == '__main__':
     s = SPserver()
     cln = SPclient()
     cln.train(s.train)
-    acc, loss = evalmodel(s.model_sev, cln.model_cln)
-    print("准确率:{}, 损失值:{}".format(acc, loss))
+    # acc, loss = evalmodel(s.model_sev, cln.model_cln)
+    # print("准确率:{}, 损失值:{}".format(acc, loss))

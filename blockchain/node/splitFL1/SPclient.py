@@ -6,7 +6,8 @@ from blockchain.node.splitFL.splitmodel import mnist_Net_client
 from fl.loadTrainData import load2MnistLoader
 
 logger = logging.getLogger()
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cpu')
 
 
 class SPclient:

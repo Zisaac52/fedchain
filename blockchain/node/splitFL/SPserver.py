@@ -1,7 +1,8 @@
 import torch
 
 from blockchain.node.splitFL.splitmodel import mnist_Net_server
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cpu')
 
 
 class SPserver:

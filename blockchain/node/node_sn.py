@@ -36,6 +36,7 @@ class NodeSN:
     def sn_handler(self):
         comun = Message(type=0, status=200, content={'message': self.node_info})
         entry = config.get('entry_node')
+        logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, comun))
         try:
             resp = runRemoteFunc(config['func']['sendMsg'], data=comun, HOST=entry.get('ip'),
                                 PORT=entry.get('port'))

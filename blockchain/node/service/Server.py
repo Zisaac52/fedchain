@@ -85,7 +85,7 @@ class FormData(data_pb2_grpc.FormDataServicer):
             resp = Message(type=-1, status=500, content={'{}'.format(e)})
             logger.error('{} - {}'.format(sys._getframe().f_code.co_name, e))
         if resp is not None:
-            logger.info('{} - {}'.format(sys._getframe().f_code.co_name, resp))
+            logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))
             return data_pb2.response(message=json.dumps(resp, cls=SetEncoder))
         else:
             resp = Message(type=-1, status=200, content={'message': 'no message!'})

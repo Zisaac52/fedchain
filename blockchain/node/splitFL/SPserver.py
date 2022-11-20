@@ -27,5 +27,5 @@ class SPserver:
         # if self.count % 320 == 0:
         #     torch.save(self.model_sev.state_dict(), './data/sp/server-{}.pth'.format(self.count))
         if flag:
-            torch.save(self.model_sev.state_dict(), './data/sp/server-{}.pth'.format(self.epoch))
+            torch.save(self.model_sev.state_dict(), '{}server-{}.pth'.format(self.path, self.epoch))
         return dfx_client

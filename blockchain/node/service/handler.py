@@ -12,8 +12,8 @@ from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
 from blockchain.node.service.handlerFL import start_fl_train_handler, calcdiff_handler
-from blockchain.node.splitFL.SPclient import SPclient
-from blockchain.node.splitFL.SPserver import SPserver
+from blockchain.node.splitFL1.SPclient import SPclient
+from blockchain.node.splitFL1.SPserver import SPserver
 
 logger = logging.getLogger()
 

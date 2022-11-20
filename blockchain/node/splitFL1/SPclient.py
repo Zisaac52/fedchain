@@ -51,5 +51,5 @@ class SPclient:
             torch.save(self.model_cln.state_dict(), '{}client-{}.pth'.format(self.path, epoch))
             # acc, loss = evalmodel()
             # print("第{}轮, 准确率:{}, 损失值:{}".format(i, acc, loss))
-            print('第{}趟'.format(epoch))
+            logger.info('第{}趟'.format(epoch))
         # logger.info('{} - 训练完成，共{}趟'.format(sys._getframe().f_code.co_name, ep))

@@ -12,6 +12,7 @@ logger = logging.getLogger()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ldevice = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
 class SPclient:
     def __init__(self):
         self.model_cln = mnist_Net_client()
@@ -25,8 +26,7 @@ class SPclient:
     # 客户端先训练，完成后传入到服务端计算剩余的东西
     def train(self, server_train):
         ep = 20
-        path = './data/ep/'
-        torch.save(self.model_cln.state_dict(), '{}client-0.pth'.format(path))
+        torch.save(self.model_cln.state_dict(), '{}client-0.pth'.format(self.path))
         self.model_cln.train()
         flag = False
         epoch = 0
@@ -47,7 +47,7 @@ class SPclient:
                 fx.backward(dfx)
                 self.optimizer.step()
             flag = True
-            # torch.save(self.model_cln.state_dict(), '{}client-{}.pth'.format(path, epoch))
+            torch.save(self.model_cln.state_dict(), '{}client-{}.pth'.format(self.path, epoch))
             # acc, loss = evalmodel()
             # print("第{}轮, 准确率:{}, 损失值:{}".format(i, acc, loss))
         logger.info('{} - 训练完成，共{}趟'.format(sys._getframe().f_code.co_name, ep))

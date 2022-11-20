@@ -31,7 +31,7 @@ class SPserver:
         if flag:
             self.epoch += 1
             torch.save(self.model_sev.state_dict(), '{}server-{}.pth'.format(self.path, self.epoch))
-        if count > 0 and count % 100 == 0:
+        if count > 0 and count % 10 == 0:
             return dfx_client
         else:
             return 'Nodata'

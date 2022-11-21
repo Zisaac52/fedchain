@@ -21,7 +21,7 @@ class SPclient:
         self.model_cln.to(device)
         self.optimizer = torch.optim.SGD(self.model_cln.parameters(), lr=0.001, momentum=0.0001)
         datasets, _ = load2MnistLoader()
-        self.train_loader = torch.utils.data.DataLoader(datasets, batch_size=32, shuffle=True)
+        self.train_loader = torch.utils.data.DataLoader(datasets, batch_size=64, shuffle=True)
 
     # 客户端先训练，完成后传入到服务端计算剩余的东西
     def train(self, server_train):

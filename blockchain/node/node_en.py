@@ -46,7 +46,9 @@ class NodeEN:
             nodeinf = {'port': self.node_info['port'], 'ip': config.get('publicIp'), 'attr': self.node_info['attr']}
             reginfo = Message(type=0, status=200, content={'message': nodeinf})
             logger.debug('{} - {}' .format(sys._getframe().f_code.co_name, reginfo))
-            self.sender(reginfo, resp.get('content').get('data'))
+            snd = resp.get('content').get('data')
+            snd['ip'] = snd['publicIp']
+            self.sender(reginfo, snd)
             # 给EN节点自身设置一个leader
             leader = Message(type=9, status=200, content=resp.get('content'))
             self.sender(leader, self.node_info)
@@ -60,7 +62,7 @@ class NodeEN:
         """
         logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, mesg))
         try:
-            resp = runRemoteFunc(config['func']['sendMsg'], data=mesg, HOST=destination.get('publicIp'),
+            resp = runRemoteFunc(config['func']['sendMsg'], data=mesg, HOST=destination.get('ip'),
                                 PORT=destination.get('port'))
             if resp.get('status') == 200:
                 logger.info('{} - Successful, Info:{}'.format(sys._getframe().f_code.co_name, resp.get('content')))

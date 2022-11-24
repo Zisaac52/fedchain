@@ -19,4 +19,5 @@ def RegisterData():
     attr = config.get('node_attr')
     port = config.get('port')
     ip = config.get('ip')
-    return {'port': port, 'ip': ip, 'attr': attr}
+    puip = config.get('publicIp')
+    return {'port': port, 'ip': ip, 'publicIp': puip, 'attr': attr}

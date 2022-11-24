@@ -43,7 +43,8 @@ class NodeEN:
         # 向待注册SN发送注册信息，完成注册
         if ok:
             self.node_info['ip'] = config.get('publicIp')
-            reginfo = Message(type=0, status=200, content={'message': self.node_info})
+            nodeinf = {'port': self.node_info['port'], 'ip': config.get('publicIp'), 'attr': self.node_info['attr']}
+            reginfo = Message(type=0, status=200, content={'message': nodeinf})
             logger.debug('{} - {}' .format(sys._getframe().f_code.co_name, reginfo))
             self.sender(reginfo, resp.get('content').get('data'))
             # 给EN节点自身设置一个leader

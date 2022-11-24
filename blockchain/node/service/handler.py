@@ -278,11 +278,14 @@ def en_train_handler(message=None):
 def set_en_leader_handler(message):
     """
     EN设置注册节点 --9
-    :param message: content -> dict()
+    :param message: content -> dict()   {'port': '8081', 'ip': '10.0.12.16', 'publicIp': puip, 'attr': 'SN'}
     :param node:
     :return:
     """
-    Handler().EN_leader = message.get('data')
+    nodes = message.get('data')
+    nodes['ip'] = nodes['publicIp']
+    Handler().EN_leader = nodes
+    message.get()
     logger.info('{} - {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
 
 

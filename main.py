@@ -50,7 +50,8 @@ def SetConfig(port='', attr='', entry='', ip='',fsn=True):
     with open('nodeconfig.json', 'r') as f:
         conf = json.load(f)
         conf['FirstNode'] = fsn
-        conf['ip'] = ip if ip != '' else get_host_ip()
+        conf['ip'] = get_host_ip()
+        conf['publicIp'] = ip if ip != '' else get_host_ip()
         if attr != '':
             conf['node_attr'] = attr
         if port != '':

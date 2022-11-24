@@ -42,6 +42,7 @@ class NodeEN:
         logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, resp))
         # 向待注册SN发送注册信息，完成注册
         if ok:
+            self.node_info['ip'] = config.get('publicIp')
             reginfo = Message(type=0, status=200, content={'message': self.node_info})
             logger.debug('{} - {}' .format(sys._getframe().f_code.co_name, reginfo))
             self.sender(reginfo, resp.get('content').get('data'))

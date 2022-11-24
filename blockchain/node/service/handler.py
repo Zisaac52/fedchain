@@ -283,9 +283,7 @@ def set_en_leader_handler(message):
     :return:
     """
     nodes = message.get('data')
-    nodes['ip'] = nodes['publicIp']
-    Handler().EN_leader = nodes
-    message.get()
+    Handler().EN_leader = {'port': nodes['port'], 'ip': nodes['publicIp'], 'attr': nodes['attr']}
     logger.info('{} - {}'.format(sys._getframe().f_code.co_name, Handler().EN_leader))
 
 

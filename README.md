@@ -73,13 +73,13 @@ config.py文件
 节点启动
 ```linux
 # 在8080启动第一个SN节点,入口节点(使用本机ip 127.0.0.1:8080)
-python main.py --port 8080 --nt SN --entry 10.66.9.16:8080 -z
+python main.py --port 8080 --nt SN --entry 222.197.211.74:8080 -z
 # 在8081启动SN节点(节点会向入口地址注册)
-python main.py --port 8081 --nt SN --entry 10.66.9.16:8080
+python main.py --port 8081 --nt SN --entry 222.197.211.74:8080
 # 在8082启动EN节点，EN节点会向入口地址查询合适的SN节点，并向其注册
-python main.py --port 8082 --nt EN --entry 10.66.9.16:8080
+python main.py --port 8082 --nt EN --entry 222.197.211.74:8080
 # 控制台，需要一个SN节点的地址，不能接入EN节点
-python Console.py --ip 10.66.9.16 --port 8080
+python Console.py --ip 222.197.211.74 --port 8080
 ```
 ## 控制台命令
 

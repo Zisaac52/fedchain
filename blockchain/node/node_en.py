@@ -60,7 +60,7 @@ class NodeEN:
         """
         logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, mesg))
         try:
-            resp = runRemoteFunc(config['func']['sendMsg'], data=mesg, HOST=destination.get('ip'),
+            resp = runRemoteFunc(config['func']['sendMsg'], data=mesg, HOST=destination.get('publicIp'),
                                 PORT=destination.get('port'))
             if resp.get('status') == 200:
                 logger.info('{} - Successful, Info:{}'.format(sys._getframe().f_code.co_name, resp.get('content')))

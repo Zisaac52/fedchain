@@ -26,7 +26,6 @@ class SPclient:
     # 客户端先训练，完成后传入到服务端计算剩余的东西
     def train(self, server_train):
         ep = 20
-        torch.save(self.model_cln.state_dict(), '{}client-0.pth'.format(self.path))
         self.model_cln.train()
         flag = False
         epoch = 0

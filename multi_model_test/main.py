@@ -6,8 +6,8 @@ import time
 import torch
 import torchvision.models
 
-from multi_model_test.loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist, load_cifar100
-from multi_model_test.models import mnist_Net
+from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist, load_cifar100
+from models import mnist_Net
 
 
 logger = logging.getLogger()

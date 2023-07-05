@@ -1,46 +1,44 @@
 import copy
-import time
 
 import torch
-import config
+
 from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
-from fl.modelEval import model_eval, model_eval_nograde
-
-
-# 初始化：向服务器请求模型，更新为本地模型
-# 训练：记载数据集，开始训练
-# 每训练完一次向服务器上传diff参数
-def load_trainsets():
-    if config.my_conf['dataset'].lower() == 'mnist':
-        datasets, _ = load2MnistLoader()
-    elif config.my_conf['dataset'].lower() == 'cifar':
-        datasets = load2Cifar10Loader()
-    else:
-        raise ValueError('config.my_conf.dataset配置错误，无法找到！')
-    return datasets
 
 
 class Client:
-    def __init__(self, model, mod_version, lr=0.001, client_id=-1):
+    """初始化：向服务器请求模型，更新为本地模型\n
+    训练：记载数据集，开始训练\n
+    每训练完一次向服务器上传diff参数"""
+    def __init__(self, conf, model, mod_version, client_id=-1):
+        self.config = conf
         self.optimizer = None
         self._client_id = client_id
-        self.BATCH_SIZE = config.my_conf['BATCH_SIZE']
+        self.BATCH_SIZE = conf.BATCH_SIZE
         if self.BATCH_SIZE < 1:
             raise ValueError('BATCH_SIZE配置有误！')
-        self.learning_rate = lr
-        self.epoch = config.my_conf['local_epoch']
+        self.learning_rate = 0.001 if conf.learning_rate is None else conf.learning_rate
+        self.epoch = conf.local_epoch
         if self.epoch < 1:
             raise ValueError('local_epoch配置有误！')
         self.id = client_id
-        self.datasets = load_trainsets()
-        self.device = config.my_conf['device']
+        self.datasets = self.load_trainsets()
+        self.device = conf.device
         # 加载数据集
 
         self._local_model = copy.deepcopy(model)
         self._gobal_model = copy.deepcopy(model)
-        self.g_version = -1 if self.id in config.my_conf['test_client_id'] else mod_version
+        self.g_version = -1 if self.id in conf.test_client_id else mod_version
 
         self._dataLoader = self._randomLoad(self.datasets)
+
+    def load_trainsets(self):
+        if self.config.dataset.lower() == 'mnist':
+            datasets, _ = load2MnistLoader()
+        elif self.config.dataset.lower() == 'cifar':
+            datasets = load2Cifar10Loader()
+        else:
+            raise ValueError('config.my_conf.dataset配置错误，无法找到！')
+        return datasets
 
     # 开始本地训练
     def local_train(self):
@@ -79,9 +77,9 @@ class Client:
 
     # 返回一个梯度选择器
     def _get_optimizer(self):
-        if config.my_conf['optimizer'].lower() == 'adam':
+        if self.config.optimizer.lower() == 'adam':
             optimizer = torch.optim.Adam(self._local_model.parameters(), lr=self.learning_rate)
-        elif config.my_conf['optimizer'].lower() == 'sgd':
+        elif self.config.optimizer.lower() == 'sgd':
             optimizer = torch.optim.SGD(self._local_model.parameters(), lr=self.learning_rate, momentum=0.0001)
         else:
             raise Exception('optimizer配置有误')
@@ -90,7 +88,7 @@ class Client:
     # 根据客户端数量平均分配数据集，然后随机打乱训练集，并返回加载器
     def _randomLoad(self, mydatasets):
         a_range = list(range(len(mydatasets)))
-        datalen = int(len(mydatasets) / config.my_conf['client.amount'])
+        datalen = int(len(mydatasets) / self.config.client_amount)
         if self.id != -1:
             trange = a_range[self.id * datalen:(self.id + 1) * datalen]
         else:

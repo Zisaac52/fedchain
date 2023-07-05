@@ -9,3 +9,4 @@ grpcio
 protobuf
 grpcio-tools
 psutil~=5.9.4
+munch~=2.5.0

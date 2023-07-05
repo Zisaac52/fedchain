@@ -5,8 +5,14 @@ from fl.loadTrainData import load2MnistLoader, load2Cifar10TestLoader
 device = config.my_conf['device']
 
 
-def model_eval(model, testLoader=None):
-    # 进入模型评估模式
+def model_eval(model, device, testLoader=None ):
+    """用于评估模型准确率和损失值的\n
+    传入模型和测试集\n
+    :param device: cuda | cpu
+    :param model 待评估模型\n
+    :param testLoader 测试集加载器\n
+    :returns aver_loss,accuracy\n
+    # 进入模型评估模式"""
     model.eval()
     # 如果没传参，就用原来的全集
     if testLoader is None:
@@ -16,19 +22,18 @@ def model_eval(model, testLoader=None):
     dataset_size = 0
     for batch_id, batch in enumerate(testLoader):  # batch_id就为enumerate()遍历集合所返回的批量序号
         inputs, target = batch  # 得到数据集和标签
-        if torch.cuda.is_available():
-            inputs = inputs.cuda()
-            target = target.cuda()
+        inputs = inputs.to(device)
+        target = target.to(device)
         dataset_size += inputs.size()[0]  # data.size()=[batch,通道数,32,32]、target.size()=[batch]
         output = model(inputs)
 
-        if config.my_conf["dataset"].lower() == "mnist":
-            total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-        elif config.my_conf["dataset"].lower() == "cifar":
-            total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-        else:
-            raise TypeError("Not find Appropriate mode.")
-            # sum up batch loss
+        total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
+        # if config.my_conf["dataset"].lower() == "mnist":
+        #     total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
+        # elif config.my_conf["dataset"].lower() == "cifar":
+        #     total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
+        # else:
+        #     raise TypeError("Not find Appropriate mode.")
         # .data意即将变量的tensor取出来
         # 因为tensor包含data和grad，分别放置数据和计算的梯度
         pred = output.data.max(1)[1]  # get the index of the max log-probability

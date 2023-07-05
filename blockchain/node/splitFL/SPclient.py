@@ -27,7 +27,7 @@ class SPclient:
     def train(self, server_train):
         ep = 20
         self.model_cln.train()
-        flag = False
+        flag = 0
         epoch = 0
         for i in range(ep):
             epoch += 1
@@ -42,11 +42,12 @@ class SPclient:
                 cln_fx = fx.clone().detach().requires_grad_(True)
                 dfx = server_train(cln_fx, targets, flag, epoch)
                 if flag:
-                    flag = False
+                    flag = 0
                 fx.backward(dfx)
                 self.optimizer.step()
-            flag = True
+            flag = 1
             torch.save(self.model_cln.state_dict(), '{}client-{}.pth'.format(self.path, epoch))
             # acc, loss = evalmodel()
             # print("第{}轮, 准确率:{}, 损失值:{}".format(i, acc, loss))
-        logger.info('{} - 训练完成，共{}趟'.format(sys._getframe().f_code.co_name, ep))
+            logger.info('{} - 第{}轮'.format(sys._getframe().f_code.co_name, epoch))
+        logger.info('{} - 训练完成，共{}轮'.format(sys._getframe().f_code.co_name, ep))

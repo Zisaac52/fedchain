@@ -1,1 +1,1 @@
-{"func": {"upload": "uploadModel", "sendMsg": "communicate"}, "FirstNode": false, "entry_node": {"ip": "222.197.211.74", "port": "8080", "attr": "SN"}, "type": [0, 1, 2, 3, 4], "node_attr": "EN", "port": "8082", "ip": "222.197.211.74"}
+{"func": {"upload": "uploadModel", "sendMsg": "communicate"}, "FirstNode": false, "entry_node": {"ip": "192.168.3.2", "port": "8080", "attr": "SN"}, "type": [0, 1, 2, 3, 4], "node_attr": "EN", "port": "8082", "ip": "192.168.3.2", "publicIp": "192.168.3.2"}

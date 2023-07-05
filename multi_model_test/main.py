@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 import time
 
 import torch
@@ -10,18 +12,20 @@ from multi_model_test.models import mnist_Net
 
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
-fh = logging.FileHandler('test1.log', encoding='utf-8')
+# fh = logging.FileHandler('test1.log', encoding='utf-8')
 # 再创建一个handler，用于输出到控制台
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -m %(message)s')
 # 设置日志的级别
 logger.setLevel(logging.INFO)
 # 设置的日志的输出
-fh.setFormatter(formatter)
+# fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 # logger对象可以添加多个fh和ch对象
-logger.addHandler(fh)
+# logger.addHandler(fh)
 logger.addHandler(ch)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 
 
 def load_trainsets(config):

@@ -207,7 +207,7 @@ def resnet50(pretrained=False, progress=True, **kwargs):
 
 def resnet101(pretrained=False, progress=True, **kwargs):
     return _resnet('resnet101', BottleNeck, [3, 4, 23, 3], pretrained,
-                   progress, **kwargs)
+                progress, **kwargs)
 
 
 def resnet152(pretrained=False, progress=True, **kwargs):

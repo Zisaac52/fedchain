@@ -8,13 +8,14 @@ import torchvision.models
 
 from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist, load_cifar100
 from models import mnist_Net
+from resnet_model import resnet18
 
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
 # fh = logging.FileHandler('test1.log', encoding='utf-8')
 # 再创建一个handler，用于输出到控制台
 ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -m %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 # 设置日志的级别
 logger.setLevel(logging.INFO)
 # 设置的日志的输出
@@ -63,7 +64,7 @@ def load_model(dataset):
     elif 'cifar10' == dataset:
         xxmodel = torchvision.models.resnet18()
     elif 'cifar100' == dataset:
-        xxmodel = torchvision.models.resnet34()
+        xxmodel = resnet18()
     else:
         raise ValueError("No such model!")
     return xxmodel
@@ -166,10 +167,11 @@ class DtsConig:
 if __name__ == '__main__':
     logger.info('训练数据集：mnist | fashion | cifar10 | cifar100')
     arr = [DtsConig('mnist', 0.001, 64, 100),
-            DtsConig('fashion', 0.001, 64, 100),
-            DtsConig('cifar10', 0.001, 64, 200),
-            # DtsConig('cifar100', 0.001, 64, 100)
+            DtsConig('fashion', 0.001, 64, 160),
+            DtsConig('cifar10', 0.001, 64, 220),
+            DtsConig('cifar100', 0.001, 64, 260)
         ]
     for Dts in arr:
         train(Dts)
         pass
+    # train(arr[3])

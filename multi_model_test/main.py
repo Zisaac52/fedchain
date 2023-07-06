@@ -9,7 +9,6 @@ import torchvision.models
 from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist, load_cifar100
 from models import mnist_Net
 
-
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
 # fh = logging.FileHandler('test1.log', encoding='utf-8')
@@ -70,7 +69,7 @@ def load_model(dataset):
     return xxmodel
 
 
-def model_eval(model, device, testLoader=None ):
+def model_eval(model, device, testLoader=None):
     """用于评估模型准确率和损失值的\n
     传入模型和测试集\n
     :param device: cuda | cpu
@@ -117,19 +116,20 @@ def model_eval(model, device, testLoader=None ):
 
 
 def train(Dts):
+    device = torch.device('cpu')
     learning_rate = Dts.lr
     epoch = Dts.epoch
     dataset_name = Dts.name
     BATCH_SIZE = Dts.batch_size
-    logger.info(f'dataset_name:{dataset_name},learning_rate:{learning_rate},epoch:{epoch},BATCH_SIZE:{BATCH_SIZE}')
+
     train_loader = torch.utils.data.DataLoader(load_dataset(dataset_name), batch_size=BATCH_SIZE, shuffle=True,
                                             num_workers=0)
     test_loader = torch.utils.data.DataLoader(load_dataset(dataset_name, False), batch_size=BATCH_SIZE, shuffle=True,
                                             num_workers=0)
-    device = torch.device('cpu')
     model = load_model(dataset_name)
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.0001)
+    logger.info(f'dataset_name:{dataset_name},learning_rate:{learning_rate},epoch:{epoch},BATCH_SIZE:{BATCH_SIZE}')
     logger.info('ep,acc,loss,run time(s),speed(s/p)')
     # 模型训练逻辑
     model.train()
@@ -165,10 +165,11 @@ class DtsConig:
 
 if __name__ == '__main__':
     logger.info('训练数据集：mnist | fashion | cifar10 | cifar100')
-    arr = [DtsConig('mnist', 0.001, 64, 80),
-            DtsConig('fashion', 0.001, 64, 80),
-            DtsConig('cifar10', 0.001, 64, 100),
-            DtsConig('cifar100', 0.001, 64, 100)]
+    arr = [DtsConig('mnist', 0.001, 64, 100),
+            DtsConig('fashion', 0.001, 64, 100),
+            DtsConig('cifar10', 0.001, 64, 200),
+            # DtsConig('cifar100', 0.001, 64, 100)
+        ]
     for Dts in arr:
         train(Dts)
-
+        pass

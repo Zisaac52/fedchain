@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 
 from fl.Configurator import Configurator
 from fl.client import Client
@@ -16,6 +18,9 @@ logger.setLevel(logging.INFO)  # 设置日志的级别
 ch.setFormatter(formatter)
 # logger.addHandler(fh) #logger对象可以添加多个fh和ch对象
 logger.addHandler(ch)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 
 
 def load_dataset(mydataset, is_training=True):

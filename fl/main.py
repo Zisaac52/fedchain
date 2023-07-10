@@ -2,10 +2,10 @@ import logging
 import os
 import sys
 
-from fl.Configurator import Configurator
-from fl.client import Client
-from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist
-from fl.server import Server
+from Configurator import Configurator
+from client import Client
+from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist
+from server import Server
 
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件

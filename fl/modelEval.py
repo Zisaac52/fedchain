@@ -1,7 +1,7 @@
 import torch
 
-from fl.Configurator import Configurator
-from fl.loadTrainData import load2MnistLoader, load_fashion_mnist, load2Cifar10Loader
+from Configurator import Configurator
+from loadTrainData import load2MnistLoader, load_fashion_mnist, load2Cifar10Loader
 
 config = Configurator().get_config()
 device = config.device

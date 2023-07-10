@@ -6,8 +6,8 @@ import torch
 import torchvision.models
 from torchvision import models
 
-from fl.model import mnist_Net, FmCNN
-from fl.modelEval import model_eval
+from model import mnist_Net, FmCNN
+from modelEval import model_eval
 logger = logging.getLogger()
 
 

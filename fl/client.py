@@ -2,14 +2,12 @@ import copy
 
 import torch
 
-from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
-
 
 class Client:
     """初始化：向服务器请求模型，更新为本地模型\n
     训练：记载数据集，开始训练\n
     每训练完一次向服务器上传diff参数"""
-    def __init__(self, conf, model, mod_version, client_id=-1):
+    def __init__(self, conf, model, mod_version, client_id=-1, datasets=None):
         self.config = conf
         self.optimizer = None
         self._client_id = client_id
@@ -21,7 +19,6 @@ class Client:
         if self.epoch < 1:
             raise ValueError('local_epoch配置有误！')
         self.id = client_id
-        self.datasets = self.load_trainsets()
         self.device = conf.device
         # 加载数据集
 
@@ -29,16 +26,18 @@ class Client:
         self._gobal_model = copy.deepcopy(model)
         self.g_version = -1 if self.id in conf.test_client_id else mod_version
 
-        self._dataLoader = self._randomLoad(self.datasets)
+        self._dataLoader = self._randomLoad(datasets)
 
-    def load_trainsets(self):
-        if self.config.dataset.lower() == 'mnist':
-            datasets, _ = load2MnistLoader()
-        elif self.config.dataset.lower() == 'cifar':
-            datasets = load2Cifar10Loader()
-        else:
-            raise ValueError('config.my_conf.dataset配置错误，无法找到！')
-        return datasets
+    # def load_trainsets(self):
+    #     if self.config.dataset.lower() == 'mnist':
+    #         datasets, _ = load2MnistLoader()
+    #     elif self.config.dataset.lower() == 'cifar':
+    #         datasets = load2Cifar10Loader()
+    #     elif self.config.dataset.lower() == "fmnist":
+    #         datasets = load_fashion_mnist(is_train=True)
+    #     else:
+    #         raise ValueError('config.my_conf.dataset配置错误，无法找到！')
+    #     return datasets
 
     # 开始本地训练
     def local_train(self):
@@ -57,6 +56,7 @@ class Client:
             # 加载数据集进行训练
             # count = 0
             # start = time.time()
+            optimizer = torch.optim.SGD(self._local_model.parameters(), lr=self.learning_rate, momentum=0.0001)
             for data in self._dataLoader:
                 imgs, targets = data
                 # count += len(data)
@@ -80,7 +80,7 @@ class Client:
         if self.config.optimizer.lower() == 'adam':
             optimizer = torch.optim.Adam(self._local_model.parameters(), lr=self.learning_rate)
         elif self.config.optimizer.lower() == 'sgd':
-            optimizer = torch.optim.SGD(self._local_model.parameters(), lr=self.learning_rate, momentum=0.0001)
+            optimizer = torch.optim.SGD(self._local_model.parameters(), lr=self.learning_rate, momentum=self.config.momentum)
         else:
             raise Exception('optimizer配置有误')
         return optimizer
@@ -117,3 +117,6 @@ class Client:
 
     def getDataset(self):
         return self._dataLoader
+
+    def get_client_id(self):
+        return self._client_id

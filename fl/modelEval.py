@@ -1,11 +1,28 @@
 import torch
-import config
-from fl.loadTrainData import load2MnistLoader, load2Cifar10TestLoader
 
-device = config.my_conf['device']
+from fl.Configurator import Configurator
+from fl.loadTrainData import load2MnistLoader, load_fashion_mnist, load2Cifar10Loader
+
+config = Configurator().get_config()
+device = config.device
 
 
-def model_eval(model, device, testLoader=None ):
+def get_test_loader():
+    if config.dataset.lower() == "mnist":
+        mydatasets = load2MnistLoader(is_train=False)
+    elif config.dataset.lower() == "fmnist":
+        mydatasets = load_fashion_mnist(is_train=False)
+    elif config.dataset.lower() == "cifar":
+        mydatasets = load2Cifar10Loader(is_train=False)
+    else:
+        raise Exception("only support mnist，cifar and fmnist!")
+    return torch.utils.data.DataLoader(mydatasets, batch_size=config.BATCH_SIZE, shuffle=True)
+
+
+test_loaders = get_test_loader()
+
+
+def model_eval(model, device, testLoader=None):
     """用于评估模型准确率和损失值的\n
     传入模型和测试集\n
     :param device: cuda | cpu
@@ -16,7 +33,7 @@ def model_eval(model, device, testLoader=None ):
     model.eval()
     # 如果没传参，就用原来的全集
     if testLoader is None:
-        testLoader = get_test_loader()
+        testLoader = test_loaders
     total_loss = 0.0
     correct = 0
     dataset_size = 0
@@ -53,7 +70,7 @@ def model_eval(model, device, testLoader=None ):
 
 # 返回一个元组类型（正确的个数，总的测试集数量，准确率，损失值）
 def model_eval_nograde(model, testset=None):
-    testLoader = get_test_loader() if testset is None else testset
+    testLoader = test_loaders if testset is None else testset
     test_loss = 0
     correct = 0
     model.eval()
@@ -65,14 +82,7 @@ def model_eval_nograde(model, testset=None):
             pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-            if config.my_conf["dataset"].lower() == "mnist":
-                test_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-            elif config.my_conf["dataset"].lower() == "flower":
-                test_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-            elif config.my_conf["dataset"].lower() == "cifar":
-                test_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-            else:
-                raise TypeError("Not find Appropriate mode.")
+            test_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
     return (100. * correct / len(testLoader.dataset)), (test_loss / len(testLoader.dataset))
     # return (
     #     correct,
@@ -81,14 +91,3 @@ def model_eval_nograde(model, testset=None):
     #     test_loss / len(testLoader.dataset)
     # )
 
-
-def get_test_loader():
-    if config.my_conf["dataset"].lower() == "mnist":
-        _, mydatasets = load2MnistLoader()
-        testLoader = torch.utils.data.DataLoader(mydatasets, batch_size=config.my_conf['BATCH_SIZE'], shuffle=True)
-    elif config.my_conf["dataset"].lower() == "cifar":
-        mydatasets = load2Cifar10TestLoader()
-        testLoader = torch.utils.data.DataLoader(mydatasets, batch_size=config.my_conf['BATCH_SIZE'], shuffle=True)
-    else:
-        raise Exception("only support mnist!")
-    return testLoader

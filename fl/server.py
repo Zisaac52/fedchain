@@ -1,10 +1,12 @@
 import copy
 import logging
+import random
 
 import torch
+import torchvision.models
 from torchvision import models
 
-from fl.model import mnist_Net
+from fl.model import mnist_Net, FmCNN
 from fl.modelEval import model_eval
 logger = logging.getLogger()
 
@@ -26,12 +28,14 @@ class Server:
     def _initModel(self):
         if self._gobal_model is None:
             if self.config.dataset == "cifar":
-                self._gobal_model = models.resnet18()
+                self._gobal_model = torchvision.models.resnet18()
             elif self.config.dataset == "mnist":
                 # self.gobal_model = models.mnasnet1_0()
                 self._gobal_model = mnist_Net()
                 # 使用预训练的模型
                 # self._gobal_model = torch.load("data/model/base/network_base.pth")
+            elif self.config.dataset == "fmnist":
+                self._gobal_model = FmCNN()
             else:
                 raise ValueError("config.my_conf.dataset配置有误，无法找到该项！")
             self._gobal_model.to(self.config.device)
@@ -57,17 +61,18 @@ class Server:
 
     # 进行模型聚合，接收来自worknode的diff，更新至自己的模型
     def aggregation(self):
-        # 全局模型参数更新,得到新的global_model
-        for name, value in self._gobal_model.state_dict().items():
-            update_per_layer = self._diffval[name]
-            update_per_layer = update_per_layer.to(self.config.device)
-            # 计算平均diff，将全部客户端的结果进行聚合
-            update_per_layer = update_per_layer * (1 / len(self._clientList))
-            value = value.float()
-            update_per_layer = update_per_layer.float()
-            value.add_(update_per_layer)
-        # 聚合完成后将全局diff清空
-        self._diffval = None
+        if self._diffval is not None:
+            # 全局模型参数更新,得到新的global_model
+            for name, value in self._gobal_model.state_dict().items():
+                update_per_layer = self._diffval[name]
+                update_per_layer = update_per_layer.to(self.config.device)
+                # 计算平均diff，将全部客户端的结果进行聚合
+                update_per_layer = update_per_layer * (1 / len(self._clientList))
+                value = value.float()
+                update_per_layer = update_per_layer.float()
+                value.add_(update_per_layer)
+            # 聚合完成后将全局diff清空
+            self._diffval = None
 
     # 保存每次聚合完成的模型
     def saveModel(self, path):
@@ -79,6 +84,17 @@ class Server:
         self._clientlab.append(cln_name)
         logger.info('节点-{}-加入'.format(cln_name))
 
+    def random_client(self):
+        '''
+        客户端选择算法
+        :return:
+        '''
+        lst = []
+        rd = random.sample(range(0, self.config.client_amount), self.config.client_k)
+        for cid in rd:
+            lst.append(self._clientList[cid])
+        return lst
+
     # 原始的训练聚合方法
     def start_train(self):
         if self._count == 0:
@@ -87,10 +103,15 @@ class Server:
                 logger.info('gobal_epoch,Accuracy,loss')
         # 模型评估
         if self.config.openEval:
-            acc, loss = model_eval(self._gobal_model)
+            acc, loss = model_eval(self._gobal_model, self.config.device)
             logger.info('{},{},{}'.format(self._count, acc, loss))
         self._count += 1
-        for i, cln in enumerate(self._clientList):
+        # 随机挑选k个client进行训练
+        for i, cln in enumerate(self.random_client()):
+            # 如果开启了测试,且配置的滞后客户端不为0，则判断当前client是否为滞后节点,是则跳过该节点
+            if self.config.issyntest and len(self.config.test_client_id) is not 0:
+                if cln.get_client_id() in self.config.test_client_id:
+                    continue
             diff, ver = cln.local_train()
             if ver != -1:
                 self.accumulator(diff, 1)
@@ -107,6 +128,9 @@ class Server:
         for cln in self._clientList:
             self.dispatch(cln)
 
+    # -----------------------------------------------------------------------------------?
+    # -----------------------------------------------------------------------------------?
+    # -----------------------------------------------------------------------------------?
     # 测试聚合方法，用于平衡测试的，忽略以下方法train，test_my_scheme，dispatch_test
     def train(self, currentEpoch):
 
@@ -116,7 +140,7 @@ class Server:
                 print('gobal_epoch,Accuracy,loss')
         # 模型评估
         if self.config.openEval:
-            acc, loss = model_eval(self._gobal_model)
+            acc, loss = model_eval(self._gobal_model, self.config.device)
             print('{},{},{}'.format(self._count, acc, loss))
         self._count += 1
 

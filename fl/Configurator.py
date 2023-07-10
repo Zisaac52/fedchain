@@ -13,25 +13,33 @@ class Configurator:
 my_conf = {
     # client
     # 客户端总数
-    'client_amount': 5,
+    'client_amount': 10,
+    # 随机选择客户端的数量
+    'client_k': 4,
     # 本地迭代次数
     'local_epoch': 4,
     # 是否开启本地模型评估
     'local_OpenEval': False,
     # 梯度选择器（adam，sgd）
     'optimizer': 'sgd',
+    # cifar 搞 0.01试试，mnist 0.0001
+    'momentum': 0.0001,
 
     # server
     # 全局迭代次数
-    'gobal_epoch': 10,
+    'gobal_epoch': 101,
     # 是否开启模型评估
     'openEval': True,
-    'test_client_id': [],
 
-    # 数据集(cifar,mnist)
+    # 是否开启异步聚合和调度的测试实验
+    # 两个参数需要同步配置，值为True时test_client_id不为空
+    'issyntest': True,
+    'test_client_id': [4, 7, 8, 9],
+
+    # 数据集(cifar,mnist,fmnist)
     'dataset': 'mnist',
     # 学习率
-    'learn_rate': 0.01,
+    'learn_rate': 0.001,
     # 设备选择 cpu ，gpu，torch.device('cpu')
     'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
     # 数据集批次

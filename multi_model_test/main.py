@@ -50,7 +50,7 @@ def load_dataset(mydataset, is_training=True):
     if datasets is not None:
         return datasets(is_training)
     else:
-        raise ValueError(f' 未找到数据集{mydataset}，请检查参数配置！')
+        raise ValueError(f' 未找到数据集{mydataset}，请检查参数配置!')
 
 
 def load_model(dataset):

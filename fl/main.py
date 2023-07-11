@@ -49,7 +49,10 @@ if __name__ == '__main__':
         sr.addClient(Client(conf=config, model=model, mod_version=version, client_id=i, datasets=trainsets),
                     '127.0.0.1:808{}'.format(i))
     # 开始全局迭代训练
+    logging.info(f'数据集：{config.dataset}，是否开启实验：{config.issyntest}，cid：{config.test_client_id}，momentum：{config.momentum}')
     for i in range(config.gobal_epoch):
         sr.start_train()
-        # 保存模型
-        # sr.saveModel('data/model/gobal/{}/network_{}_{}.pth'.format(config.my_conf['test_mod'], config.my_conf['test_mod'], i))
+        # if i % 20 == 0:
+        #     # 保存模型
+        #     sr.saveModel('./data/model/gobal/network_{}_{}_{}_{}_{}_{}.pth'.format(config.dataset, config.momentum,
+        #                                             config.issyntest, len(config.test_client_id), config.learn_rate, i))

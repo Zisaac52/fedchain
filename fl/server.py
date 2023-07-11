@@ -3,11 +3,11 @@ import logging
 import random
 
 import torch
-import torchvision.models
-from torchvision import models
+import torchvision
 
-from model import mnist_Net, FmCNN
+from model import mnist_Net, FmCNN, MyResNet18
 from modelEval import model_eval
+
 logger = logging.getLogger()
 
 
@@ -28,7 +28,11 @@ class Server:
     def _initModel(self):
         if self._gobal_model is None:
             if self.config.dataset == "cifar":
-                self._gobal_model = torchvision.models.resnet18()
+                if self.config.load_model:
+                    self._gobal_model = torch.load(self.config.load_path)
+                else:
+                    # self._gobal_model = torchvision.models.resnet18()
+                    self._gobal_model = MyResNet18()
             elif self.config.dataset == "mnist":
                 # self.gobal_model = models.mnasnet1_0()
                 self._gobal_model = mnist_Net()
@@ -62,15 +66,21 @@ class Server:
     # 进行模型聚合，接收来自worknode的diff，更新至自己的模型
     def aggregation(self):
         if self._diffval is not None:
+            avg_w = 1 / len(self._clientList)
             # 全局模型参数更新,得到新的global_model
             for name, value in self._gobal_model.state_dict().items():
                 update_per_layer = self._diffval[name]
                 update_per_layer = update_per_layer.to(self.config.device)
                 # 计算平均diff，将全部客户端的结果进行聚合
-                update_per_layer = update_per_layer * (1 / len(self._clientList))
-                value = value.float()
-                update_per_layer = update_per_layer.float()
-                value.add_(update_per_layer)
+                update_per_layer = update_per_layer * avg_w
+                # 判断是否类型相同，不同则转换
+                if value.type() != update_per_layer.type():
+                    value.add_(update_per_layer.to(torch.int64))
+                else:
+                    value.add_(update_per_layer)
+                # value = value.float()
+                # update_per_layer = update_per_layer.float()
+                # value.add_(update_per_layer)
             # 聚合完成后将全局diff清空
             self._diffval = None
 
@@ -109,7 +119,7 @@ class Server:
         # 随机挑选k个client进行训练
         for i, cln in enumerate(self.random_client()):
             # 如果开启了测试,且配置的滞后客户端不为0，则判断当前client是否为滞后节点,是则跳过该节点
-            if self.config.issyntest and len(self.config.test_client_id) is not 0:
+            if self.config.issyntest and len(self.config.test_client_id) != 0:
                 if cln.get_client_id() in self.config.test_client_id:
                     continue
             diff, ver = cln.local_train()

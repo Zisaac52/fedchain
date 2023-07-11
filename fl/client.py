@@ -56,7 +56,6 @@ class Client:
             # 加载数据集进行训练
             # count = 0
             # start = time.time()
-            optimizer = torch.optim.SGD(self._local_model.parameters(), lr=self.learning_rate, momentum=0.0001)
             for data in self._dataLoader:
                 imgs, targets = data
                 # count += len(data)

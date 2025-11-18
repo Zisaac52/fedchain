@@ -15,6 +15,8 @@ from blockchain.node.service.handlerFL import start_fl_train_handler, calcdiff_h
 from blockchain.node.splitFL.SPclient import SPclient
 from blockchain.node.splitFL.SPserver import SPserver
 
+from config import my_conf
+
 logger = logging.getLogger()
 
 
@@ -192,7 +194,8 @@ def distribute_task_handler(message):
     elif cmd == 'SV':
         return Message(type=6, status=200, content={'message': 'success', 'data': Handler().STVECTOR})
     elif cmd == 'FLT':
-        msg = {'message': 'train', 'cmd': cmd, 'epoch': 20}
+        epoch = my_conf.get('gobal_epoch', 20)  # 默认还是 20
+        msg = {'message': 'train', 'cmd': cmd, 'epoch': epoch}
         res = bordcast(msg, 20, 'SN')
         return Message(type=6, status=200, content={"message": res})
     else:
@@ -254,7 +257,8 @@ def test_fl_handler(message):
     :param message: content -> dict{}
     :return: msg
     """
-    msg = {'node': Handler().EN_NODE_LIST[0], 'epoch': 20}
+    epoch = my_conf.get('gobal_epoch', 20)
+    msg = {'node': Handler().EN_NODE_LIST[0], 'epoch': epoch}
     logger.debug('{} - {}'.format(sys._getframe().f_code.co_name, message))
     if config.get('node_attr').upper() == 'SN':
         res = start_fl_train_handler(msg)

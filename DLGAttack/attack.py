@@ -10,7 +10,7 @@ from fl.loadTrainData import load2MnistLoader, load2Cifar10Loader
 
 def load_trainsets():
     if config.my_conf['dataset'].lower() == 'mnist':
-        datasets, _ = load2MnistLoader()
+        datasets = load2MnistLoader()
     elif config.my_conf['dataset'].lower() == 'cifar':
         datasets = load2Cifar10Loader()
     else:

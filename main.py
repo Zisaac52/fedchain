@@ -9,6 +9,8 @@ import torch
 from blockchain.node.splitFL.SPeval import evalmodel
 from blockchain.node.splitFL.splitmodel import mnist_Net_client, mnist_Net_server
 
+import multiprocessing
+
 logger = logging.getLogger()
 # 创建一个handler，用于写入日志文件
 # fh = logging.FileHandler('test1.log',encoding='utf-8')
@@ -63,6 +65,7 @@ def SetConfig(port='', attr='', entry='', ip='',fsn=True):
 
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn', force=True)  #  关键一行
     parser = argparse.ArgumentParser(description='An argument inputs into command line')
     # param是参数的名字，type是要传入参数的数据类型，help是该参数的提示信息
     # 端口

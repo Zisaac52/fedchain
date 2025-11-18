@@ -15,7 +15,7 @@ my_conf = {
 
     # server
     # 全局迭代次数
-    'gobal_epoch': 20,
+    'gobal_epoch': 10,
     # 是否开启模型评估
     'openEval': True,
 

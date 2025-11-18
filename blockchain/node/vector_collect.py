@@ -16,7 +16,7 @@ def get_endNode_perfomance():
     model = mnist_Net()
     model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.0001)
-    datasets, _ = load2MnistLoader()
+    datasets = load2MnistLoader()
     train_loader = torch.utils.data.DataLoader(datasets, batch_size=32, shuffle=True)
     # 模型训练逻辑
     model.train()

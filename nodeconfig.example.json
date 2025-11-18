@@ -1,0 +1,1 @@
+{"func": {"upload": "uploadModel", "sendMsg": "communicate"}, "FirstNode": false, "entry_node": {"ip": "127.0.0.1", "port": "8080", "attr": "SN"}, "type": [0, 1, 2, 3, 4], "node_attr": "EN", "port": "8080", "ip": "127.0.0.1", "publicIp": "127.0.0.1"}

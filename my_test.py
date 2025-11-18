@@ -12,7 +12,7 @@ def train():
     datasets = None
     if config.my_conf['dataset'].lower() == 'mnist':
         model = mnist_Net()
-        datasets, _ = load2MnistLoader()
+        datasets = load2MnistLoader()
     elif config.my_conf['dataset'].lower() == 'cifar':
         model = ResNet18()
         datasets = load2Cifar10Loader()

@@ -11,7 +11,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # 训练：记载数据集，开始训练
 # 每训练完一次向服务器上传diff参数
 def load_trainsets():
-    datasets, _ = load2MnistLoader()
+    datasets = load2MnistLoader()
     return datasets
 
 

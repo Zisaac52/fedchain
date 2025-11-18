@@ -1,5 +1,13 @@
 # 联邦学习与区块链
-环境：python 3.7
+环境：python 3.10（建议使用CUDA 12.x驱动）
+
+## 环境准备
+1. 创建虚拟环境：`conda create -n fedchain_gpu python=3.10`，`conda activate fedchain_gpu`。
+2. 常规依赖：`pip install -r requirements.txt`。国内可以继续使用清华/阿里镜像加速。
+3. GPU用户务必使用官方CUDA轮子安装PyTorch组件：  
+   `pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0`  
+   （如需CPU版本，可省略 `--index-url` 并使用 PyPI 默认源。）
+
 ## 分布式网络仿真
 使用grpc框架实现rpc通信，建立区块链节点
 由于资源有限，利用mysql模拟区块存储
@@ -15,7 +23,7 @@ proto文件编译命令，在proto文件所在位置运行该命令
 python -m grpc_tools.protoc -I. --python_out=./base_package --grpc_python_out=./base_package ./proto/data.proto
 ```
 ## 联邦学习
-pytorch 1.12
+pytorch 2.8
 本框架实现的是Personality federate learning联邦学习，总体流程如下：
 1. 服务器端初始化基本层权重Wb。
 2. 客户端初始化自己的个性化层权重Wp

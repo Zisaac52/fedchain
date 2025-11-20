@@ -35,6 +35,24 @@ def load2Cifar10Loader(is_train=True):
     return train_data
 
 
+def load2Cifar100Loader(is_train=True):
+    if is_train:
+        transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+        ])
+    else:
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+        ])
+    train_data = datasets.CIFAR100(load_path, train=is_train, download=True,
+                                   transform=transform)
+    return train_data
+
+
 def load_fashion_mnist(is_train=True):
     return datasets.FashionMNIST(load_path, train=is_train, transform=transforms.Compose([
                                     transforms.ToTensor(),

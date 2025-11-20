@@ -1,4 +1,5 @@
 import copy
+import time
 
 import torch
 
@@ -41,6 +42,7 @@ class Client:
 
     # 开始本地训练
     def local_train(self):
+        start_time = time.time()
         self.optimizer = self._get_optimizer()
         # # 模型评估
         # if config.my_conf['local_OpenEval']:
@@ -71,8 +73,9 @@ class Client:
                 self.optimizer.step()
             # end = time.time()
             # print('batch:{},run time:{},speed:{}'.format(count, end - start, (end - start) / count))
-        diff = self.getDiff()
-        return diff
+        diff, version = self.getDiff()
+        elapsed = time.time() - start_time
+        return diff, version, elapsed
 
     # 返回一个梯度选择器
     def _get_optimizer(self):

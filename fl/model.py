@@ -388,7 +388,6 @@ class ResNets(nn.Module):
         return out
 
 
-def MyResNet18():
+def MyResNet18(num_classes=10):
 
-    return ResNets(ResidualBlock)
-
+    return ResNets(ResidualBlock, num_classes=num_classes)

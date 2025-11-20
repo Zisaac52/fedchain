@@ -4,7 +4,7 @@ import sys
 
 from Configurator import Configurator
 from client import Client
-from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist
+from loadTrainData import load2MnistLoader, load2Cifar10Loader, load_fashion_mnist, load2Cifar100Loader
 from server import Server
 
 logger = logging.getLogger()
@@ -27,6 +27,7 @@ def load_dataset(mydataset, is_training=True):
     dictconfig = {
         'mnist': load2MnistLoader,
         'cifar': load2Cifar10Loader,
+        'cifar100': load2Cifar100Loader,
         'fmnist': load_fashion_mnist,
     }
 

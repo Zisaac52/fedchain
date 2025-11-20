@@ -27,18 +27,20 @@ class Server:
 
     def _initModel(self):
         if self._gobal_model is None:
-            if self.config.dataset == "cifar":
+            dataset_name = self.config.dataset.lower()
+            if dataset_name == "cifar":
                 if self.config.load_model:
                     self._gobal_model = torch.load(self.config.load_path)
                 else:
-                    # self._gobal_model = torchvision.models.resnet18()
-                    self._gobal_model = MyResNet18()
-            elif self.config.dataset == "mnist":
+                    self._gobal_model = MyResNet18(num_classes=10)
+            elif dataset_name == "cifar100":
+                self._gobal_model = MyResNet18(num_classes=100)
+            elif dataset_name == "mnist":
                 # self.gobal_model = models.mnasnet1_0()
                 self._gobal_model = mnist_Net()
                 # 使用预训练的模型
                 # self._gobal_model = torch.load("data/model/base/network_base.pth")
-            elif self.config.dataset == "fmnist":
+            elif dataset_name == "fmnist":
                 self._gobal_model = FmCNN()
             else:
                 raise ValueError("config.my_conf.dataset配置有误，无法找到该项！")
@@ -110,24 +112,26 @@ class Server:
         if self._count == 0:
             # 输出准确率和loss
             if self.config.openEval:
-                logger.info('gobal_epoch,Accuracy,loss')
+                logger.info('gobal_epoch,Accuracy,loss,Precision,Recall,F1-score')
         # 模型评估
         if self.config.openEval:
-            acc, loss = model_eval(self._gobal_model, self.config.device)
-            logger.info('{},{},{}'.format(self._count, acc, loss))
+            acc, loss, precision, recall, f1 = model_eval(self._gobal_model, self.config.device)
+            logger.info('{},{},{},{},{},{}'.format(self._count, acc, loss, precision, recall, f1))
         self._count += 1
-        # 随机挑选k个client进行训练
+        max_client_time = 0.0
         for i, cln in enumerate(self.random_client()):
             # 如果开启了测试,且配置的滞后客户端不为0，则判断当前client是否为滞后节点,是则跳过该节点
             if self.config.issyntest and len(self.config.test_client_id) != 0:
                 if cln.get_client_id() in self.config.test_client_id:
                     continue
-            diff, ver = cln.local_train()
+            diff, ver, elapsed = cln.local_train()
+            max_client_time = max(max_client_time, elapsed)
             if ver != -1:
                 self.accumulator(diff, 1)
         # 模型聚合
         self.aggregation()
         self.version += 1
+        logger.info('epoch {} C_gmax(sec) {}'.format(self._count - 1, max_client_time))
         self.dispatch_normal()
 
     # 获取初始模型
@@ -147,14 +151,15 @@ class Server:
         if self._count == 0:
             # 输出准确率和loss
             if self.config.openEval:
-                print('gobal_epoch,Accuracy,loss')
+                print('gobal_epoch,Accuracy,loss,Precision,Recall,F1-score')
         # 模型评估
         if self.config.openEval:
-            acc, loss = model_eval(self._gobal_model, self.config.device)
-            print('{},{},{}'.format(self._count, acc, loss))
+            acc, loss, precision, recall, f1 = model_eval(self._gobal_model, self.config.device)
+            print('{},{},{},{},{},{}'.format(self._count, acc, loss, precision, recall, f1))
         self._count += 1
 
         # 训练聚合
+        max_client_time = 0.0
         for i, cln in enumerate(self._clientList):
             skip_flag = False
             u = 1
@@ -163,7 +168,8 @@ class Server:
                 if skip_flag:
                     continue
                 else:
-                    diff, ver = cln.local_train()
+                    diff, ver, elapsed = cln.local_train()
+                    max_client_time = max(max_client_time, elapsed)
                 # 全局模型分发错误，大部分节点都落后一个版本
                 # 若是新方案则进行更改u的值
                 # print('第{}轮，客户端{}版本差异：{}'.format(currentEpoch, i, ver != self.version))
@@ -176,12 +182,14 @@ class Server:
                     if not skip_flag:
                         self.accumulator(diff, u)
             else:
-                diff, ver = cln.local_train()
+                diff, ver, elapsed = cln.local_train()
+                max_client_time = max(max_client_time, elapsed)
                 self.accumulator(diff, u)
 
         # 模型聚合
         self.aggregation()
         self.version += 1
+        logger.info('epoch {} C_gmax(sec) {}'.format(self._count - 1, max_client_time))
         if self.config.isTest:
             # 在间隔0,3,6,9的时候分发模型
             self.dispatch_test(currentEpoch)
@@ -212,5 +220,9 @@ class Server:
                 self.dispatch(self._clientList[ids])
         # 用聚合的模型进行评估
         for ids in self.config.test_client_id:
-            acc, loss = model_eval(self._gobal_model, self._clientList[ids].getDataset())
-            print('节点id{},{},{}'.format(ids, acc, loss))
+            acc, loss, precision, recall, f1 = model_eval(
+                self._gobal_model,
+                self.config.device,
+                testLoader=self._clientList[ids].getDataset()
+            )
+            print('节点id{},{},{},{},{},{}'.format(ids, acc, loss, precision, recall, f1))

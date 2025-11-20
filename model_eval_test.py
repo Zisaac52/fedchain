@@ -13,8 +13,8 @@ def testFL():
         model.load_state_dict(stict)
         if torch.cuda.is_available():
             model.cuda()
-        acc, loss = model_eval(model)
-        print('{},{}'.format(acc, loss))
+        acc, loss, precision, recall, f1 = model_eval(model)
+        print('{},{},{},{},{}'.format(acc, loss, precision, recall, f1))
 
 
 def testSpfl():
@@ -34,7 +34,7 @@ def testSpfl():
 
 if __name__ == '__main__':
     print("start...")
-    print("acc  loss")
+    print("acc,loss,precision,recall,f1-score")
     # print("10.11	0.072213045\n94.99	0.005088198\n95.28	0.005083745")
     # print("96.93	0.003155656\n97.52	0.002512243\n97.99	0.002083545\n98.21	0.001910615\n98.03	0.002022026")
     # print("98.35	0.001691023\n98.4	0.00167461\n98.54	0.001537103\n98.44	0.001593247\n98.67	0.001382278")

@@ -106,3 +106,89 @@ M-SN(222.197.211.58:8080) <br>
 &emsp;&emsp;|----SN(222.197.211.58:8081)<br>
 &emsp;&emsp;&emsp;&emsp;|----EN(222.197.211.58:8083)<br>
 &emsp;&emsp;&emsp;&emsp;|----EN(222.197.211.58:8084)
+```
+fedchain
+├─ AGENTS.md
+├─ Console.py
+├─ DLGAttack
+│  ├─ attack.py
+│  └─ dlg
+│     ├─ LICENSE
+│     ├─ README.md
+│     ├─ assets
+│     │  ├─ demo-crop.gif
+│     │  ├─ method.jpg
+│     │  ├─ nips-dlg.jpg
+│     │  ├─ nlp_results.png
+│     │  └─ out.gif
+│     ├─ main.py
+│     ├─ models
+│     │  └─ vision.py
+│     └─ utils.py
+├─ LICENSE
+├─ README.md
+├─ blockchain
+│  ├─ node
+│  │  ├─ base_package
+│  │  │  ├─ data_pb2.py
+│  │  │  ├─ data_pb2_grpc.py
+│  │  │  └─ proto
+│  │  │     ├─ data_pb2.py
+│  │  │     └─ data_pb2_grpc.py
+│  │  ├─ config.py
+│  │  ├─ console.py
+│  │  ├─ database
+│  │  │  ├─ Block.py
+│  │  │  ├─ Store.py
+│  │  │  └─ blockDatabase.db
+│  │  ├─ entity
+│  │  │  └─ MessageEntity.py
+│  │  ├─ fed
+│  │  │  ├─ client.py
+│  │  │  ├─ loadTrainData.py
+│  │  │  ├─ model.py
+│  │  │  └─ server.py
+│  │  ├─ node_en.py
+│  │  ├─ node_sn.py
+│  │  ├─ proto
+│  │  │  └─ data.proto
+│  │  ├─ service
+│  │  │  ├─ JsonEncoder.py
+│  │  │  ├─ Server.py
+│  │  │  ├─ client.py
+│  │  │  ├─ handler.py
+│  │  │  └─ handlerFL.py
+│  │  ├─ splitFL
+│  │  │  ├─ SPclient.py
+│  │  │  ├─ SPeval.py
+│  │  │  ├─ SPserver.py
+│  │  │  ├─ main_sp.py
+│  │  │  └─ splitmodel.py
+│  │  ├─ splitFL1
+│  │  │  ├─ SPclient.py
+│  │  │  ├─ SPserver.py
+│  │  │  ├─ main_1.py
+│  │  │  └─ splitmodel.py
+│  │  └─ vector_collect.py
+│  └─ start.py
+├─ config.py
+├─ fl
+│  ├─ Configurator.py
+│  ├─ client.py
+│  ├─ loadTrainData.py
+│  ├─ main.py
+│  ├─ model.py
+│  ├─ modelEval.py
+│  └─ server.py
+├─ main.py
+├─ model_eval_test.py
+├─ models.py
+├─ my_test.py
+├─ nodeconfig.example.json
+├─ nodeconfig.json
+├─ process.py
+├─ requirements.txt
+├─ setup.py
+└─ test_model_simple.py
+
+```

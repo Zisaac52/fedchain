@@ -23,7 +23,7 @@ my_conf = {
     # 梯度选择器（adam，sgd）
     'optimizer': 'sgd',
     # cifar 搞 0.01试试，mnist 0.0001
-    'momentum': 0.5,
+    'momentum': 0.95,
 
     # server
     # 全局迭代次数
@@ -36,8 +36,8 @@ my_conf = {
     'issyntest': True,
     'test_client_id': [4],
 
-    # 数据集(cifar,mnist,fmnist)
-    'dataset': 'cifar',
+    # 数据集(cifar,mnist,fmnist,cifar100)
+    'dataset': 'cifar100',
     # 是否加载现有模型进行训练
     'load_model': False,
     'load_path': './data/model/gobal/network_{}_{}_{}_{}_{}_{}.pth',

@@ -29,9 +29,9 @@ def train():
         raise Exception('optimizer配置有误')
 
     if config.my_conf['local_OpenEval']:
-        acc, loss = model_eval(model)
-        print('gobal_epoch, Accuracy, loss')
-        print('{}, {}, {}'.format(0, acc, loss))
+        acc, loss, precision, recall, f1 = model_eval(model)
+        print('gobal_epoch, Accuracy, loss, Precision, Recall, F1-score')
+        print('{}, {}, {}, {}, {}, {}'.format(0, acc, loss, precision, recall, f1))
         # test(model, config.my_conf['device'])
 
     dataLoader = randomLoad(datasets, 10)
@@ -55,8 +55,8 @@ def train():
             optimizer.step()
 
         if config.my_conf['local_OpenEval']:
-            acc, loss = model_eval(model)
-            print('{}, {}, {}'.format(i + 1, acc, loss))
+            acc, loss, precision, recall, f1 = model_eval(model)
+            print('{}, {}, {}, {}, {}, {}'.format(i + 1, acc, loss, precision, recall, f1))
             # test(model,config.my_conf['device'])
 
 
@@ -135,4 +135,3 @@ def randomLoad(mydatasets, n):
     train_loader = torch.utils.data.DataLoader(mydatasets, batch_size=config.my_conf['BATCH_SIZE'], shuffle=False,
                                             sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
     return train_loader
-

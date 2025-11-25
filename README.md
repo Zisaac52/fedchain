@@ -101,6 +101,73 @@ python Console.py --ip 222.197.211.74 --port 8080
 |   getModel()   | 下载服务端模型 |
 | quit(),exit()  | 退出控制台   |
 |   trainFL()    | 启动fl训练  |
+|  getVector()   | 获取已注册EN性能向量 |
+| getSchedule()  | 预览DDMLTS工作量分配 |
+
+## 实验复现（FedAvg / DDMLTS / BAFL / PerFedS2）
+
+1. **统一配置**
+   - 所有实验参数集中在 `config.py`。关键字段：
+     - `scheduler_mode`: `fedavg`（原始基线）、`ddmlts_a`（无分组）、`ddmlts_b`（分组）、`bafl`、`perfeds2`。
+     - `ddmlts_alpha`、`ddmlts_cluster_count`、`ddmlts_mini_batch`、`ddmlts_tau_ratio`: 控制任务调度强度。
+     - `enable_mae` / `enable_rrmse` / `enable_r2`: 打开额外指标。
+   - `nodeconfig.json` 与 `config.py` 保持一致（节点类型、入口地址等）。
+
+2. **本地 FedAvg/调度模拟（离线）**
+   ```bash
+   # 例：运行 FedAvg（scheduler_mode=fedavg）
+   PYTHONUNBUFFERED=1 python fl/main.py > logs/fedavg_cifar100_ddmlts_offline.log
+
+   # 例：运行 DDMLTS-B（scheduler_mode=ddmlts_b, ddmlts_alpha=1.0）
+   PYTHONUNBUFFERED=1 python fl/main.py > logs/ddmlts_b_cifar100_offline.log
+   ```
+   `fl/server.py` 会在每轮日志中输出：
+   ```
+   gobal_epoch,Accuracy,loss,Precision,Recall,F1-score[,MAE,RRMSE,R-squared]
+   0,10.18,2.303655,...,epoch 0 C_gmax(sec) 10.68
+   ```
+
+3. **主辅链网络实验（在线）**
+   - 启动若干 SN / EN 节点（保持 `scheduler_mode` 与所需实验一致）：
+     ```bash
+     # SN 入口
+     python main.py --port 8080 --nt SN --entry 127.0.0.1:8080 -z
+     # 其他 SN
+     python main.py --port 8081 --nt SN --entry 127.0.0.1:8080
+     # EN 节点
+     python main.py --port 8085 --nt EN --entry 127.0.0.1:8080
+     ```
+   - 打开控制台：
+     ```bash
+     python Console.py --ip 127.0.0.1 --port 8080
+     ```
+   - 检查状态向量与调度：
+     ```
+     [Console]$ getSN()
+     [Console]$ getVector()
+     [Console]$ getSchedule()   # scheduler_mode=ddmlts_* 时生效
+     ```
+   - 运行分布式实验：
+     ```
+     [Console]$ trainFL()
+     ```
+     SN 日志会写入 `logs/<scheme>_<dataset>_<timestamp>.log`（建议在启动命令中用 `PYTHONUNBUFFERED=1 ... > logs/ddmlts_chain.log` 重定向）。
+
+4. **切换实验模式**
+   | 模式      | 设置方式                                                             |
+   |-----------|--------------------------------------------------------------------|
+   | FedAvg    | `scheduler_mode='fedavg'`                                          |
+   | DDMLTS-A  | `scheduler_mode='ddmlts_a'`，调整 `ddmlts_alpha`、`ddmlts_tau_ratio` |
+   | DDMLTS-B  | `scheduler_mode='ddmlts_b'`，额外设置 `ddmlts_cluster_count`        |
+   | BAFL      | `scheduler_mode='bafl'`（调度关闭，仅保留去中心化传输）             |
+   | PerFedS2  | `scheduler_mode='perfeds2'`（半同步策略，等待慢节点）               |
+
+5. **结果整理**
+   - `logs/*.log` 以 CSV 形式保存每轮指标与 `C_gmax`，可以直接复制到论文表格中。
+   - 可使用 `model_eval_test.py` 对 `data/flm/*.pth` 进行复检：
+     ```bash
+     python model_eval_test.py > logs/eval_report.txt
+     ```
 
 M-SN(222.197.211.58:8080) <br>
 &emsp;&emsp;|----SN(222.197.211.58:8081)<br>

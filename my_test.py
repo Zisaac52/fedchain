@@ -28,11 +28,18 @@ def train():
     else:
         raise Exception('optimizer配置有误')
 
+    eval_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if config.my_conf['local_OpenEval']:
-        acc, loss, precision, recall, f1 = model_eval(model)
+        metrics = model_eval(model, device=eval_device)
         print('gobal_epoch, Accuracy, loss, Precision, Recall, F1-score')
-        print('{}, {}, {}, {}, {}, {}'.format(0, acc, loss, precision, recall, f1))
-        # test(model, config.my_conf['device'])
+        print('{}, {}, {}, {}, {}, {}'.format(
+            0,
+            metrics.get('accuracy', 0.0),
+            metrics.get('loss', 0.0),
+            metrics.get('precision', 0.0),
+            metrics.get('recall', 0.0),
+            metrics.get('f1', 0.0)
+        ))
 
     dataLoader = randomLoad(datasets, 10)
     model.train()
@@ -55,8 +62,15 @@ def train():
             optimizer.step()
 
         if config.my_conf['local_OpenEval']:
-            acc, loss, precision, recall, f1 = model_eval(model)
-            print('{}, {}, {}, {}, {}, {}'.format(i + 1, acc, loss, precision, recall, f1))
+            metrics = model_eval(model, device=eval_device)
+            print('{}, {}, {}, {}, {}, {}'.format(
+                i + 1,
+                metrics.get('accuracy', 0.0),
+                metrics.get('loss', 0.0),
+                metrics.get('precision', 0.0),
+                metrics.get('recall', 0.0),
+                metrics.get('f1', 0.0)
+            ))
             # test(model,config.my_conf['device'])
 
 

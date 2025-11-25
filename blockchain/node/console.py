@@ -53,6 +53,8 @@ def switch(opt):
         'getModel()': 'DL',
         # 获取状态向量
         'getVector()': 'SV',
+        # 查看DDMLTS调度计划
+        'getSchedule()': 'SCH',
         # 开启联邦学习训练
         'trainFL()': 'FLT'
     }

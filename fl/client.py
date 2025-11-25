@@ -15,7 +15,9 @@ class Client:
         self.BATCH_SIZE = conf.BATCH_SIZE
         if self.BATCH_SIZE < 1:
             raise ValueError('BATCH_SIZE配置有误！')
-        self.learning_rate = 0.001 if conf.learning_rate is None else conf.learning_rate
+        lr = getattr(conf, 'learn_rate', None)
+        lr = lr if lr is not None else getattr(conf, 'learning_rate', None)
+        self.learning_rate = 0.001 if lr is None else lr
         self.epoch = conf.local_epoch
         if self.epoch < 1:
             raise ValueError('local_epoch配置有误！')
@@ -28,6 +30,10 @@ class Client:
         self.g_version = -1 if self.id in conf.test_client_id else mod_version
 
         self._dataLoader = self._randomLoad(datasets)
+        self._dataset_size = getattr(self, '_dataset_size', 0)
+        self._override_epoch = None
+        self._override_batches = None
+        self._last_elapsed = None
 
     # def load_trainsets(self):
     #     if self.config.dataset.lower() == 'mnist':
@@ -54,13 +60,15 @@ class Client:
 
         # 模型训练逻辑
         self._local_model.train()
-        for i in range(self.epoch):
-            # 加载数据集进行训练
-            # count = 0
-            # start = time.time()
+        local_epochs = max(1, int(self._override_epoch)) if self._override_epoch else self.epoch
+        max_batches = None
+        if self._override_batches is not None:
+            max_batches = max(1, int(self._override_batches))
+
+        for _ in range(local_epochs):
+            batch_counter = 0
             for data in self._dataLoader:
                 imgs, targets = data
-                # count += len(data)
                 if torch.cuda.is_available():
                     imgs = imgs.to(self.device)
                     targets = targets.to(self.device)
@@ -71,10 +79,15 @@ class Client:
                 loss = torch.nn.functional.cross_entropy(output, targets)
                 loss.backward()
                 self.optimizer.step()
-            # end = time.time()
-            # print('batch:{},run time:{},speed:{}'.format(count, end - start, (end - start) / count))
+                batch_counter += 1
+                if max_batches is not None and batch_counter >= max_batches:
+                    break
+
+        self._override_epoch = None
+        self._override_batches = None
         diff, version = self.getDiff()
         elapsed = time.time() - start_time
+        self._last_elapsed = elapsed
         return diff, version, elapsed
 
     # 返回一个梯度选择器
@@ -95,6 +108,7 @@ class Client:
             trange = a_range[self.id * datalen:(self.id + 1) * datalen]
         else:
             raise Exception("client id error!")
+        self._dataset_size = len(trange)
         # 构造数据器
         train_loader = torch.utils.data.DataLoader(mydatasets, batch_size=self.BATCH_SIZE,
                                                 sampler=torch.utils.data.sampler.SubsetRandomSampler(trange))
@@ -122,3 +136,26 @@ class Client:
 
     def get_client_id(self):
         return self._client_id
+
+    # --------------------------DDMLTS helpers
+    def apply_workload(self, assignment):
+        if assignment is None:
+            self._override_epoch = None
+            self._override_batches = None
+            return
+        self._override_epoch = assignment.get('local_epoch', self.epoch)
+        self._override_batches = assignment.get('micro_batches')
+
+    def get_dataset_size(self):
+        return getattr(self, '_dataset_size', 0)
+
+    def estimate_speed(self):
+        elapsed = self._last_elapsed if self._last_elapsed is not None else 1.0
+        dataset_size = self.get_dataset_size() or 1.0
+        return dataset_size / max(elapsed, 1e-6)
+
+    def get_state_vector(self):
+        dataset_size = float(self.get_dataset_size() or 1.0)
+        elapsed = float(self._last_elapsed or 1.0)
+        speed = float(self.estimate_speed())
+        return (dataset_size, elapsed, speed, speed)

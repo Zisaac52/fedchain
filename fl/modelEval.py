@@ -44,59 +44,77 @@ def _compute_classification_metrics(conf_matrix):
     return precision, recall, f1
 
 
+def _compute_regression_metrics(preds, targets):
+    eps = 1e-12
+    pred_tensor = torch.tensor(preds, dtype=torch.float32)
+    target_tensor = torch.tensor(targets, dtype=torch.float32)
+    err = pred_tensor - target_tensor
+    mae = torch.mean(torch.abs(err)).item()
+    mse = torch.mean(err ** 2).item()
+    rmse = torch.sqrt(err.pow(2).mean() + eps).item()
+    mean_target = torch.mean(target_tensor)
+    sst = torch.sum((target_tensor - mean_target) ** 2).item() + eps
+    sse = torch.sum(err ** 2).item()
+    r2 = 1.0 - (sse / sst)
+    rrmse = rmse / (torch.mean(torch.abs(target_tensor)).item() + eps)
+    return mae, rrmse, r2
+
+
 def model_eval(model, device, testLoader=None):
-    """用于评估模型准确率和损失值的\n
-    传入模型和测试集\n
-    :param device: cuda | cpu
-    :param model 待评估模型\n
-    :param testLoader 测试集加载器\n
-    :returns aver_loss,accuracy\n
-    # 进入模型评估模式"""
+    """用于评估模型指标"""
     model.eval()
-    # 如果没传参，就用原来的全集
     if testLoader is None:
         testLoader = test_loaders
     total_loss = 0.0
     correct = 0
     dataset_size = 0
     conf_matrix = None
-    for batch_id, batch in enumerate(testLoader):  # batch_id就为enumerate()遍历集合所返回的批量序号
-        inputs, target = batch  # 得到数据集和标签
+    need_extra = any([
+        getattr(config, 'enable_mae', False),
+        getattr(config, 'enable_rrmse', False),
+        getattr(config, 'enable_r2', False)
+    ])
+    regression_preds = []
+    regression_targets = []
+
+    for batch_id, batch in enumerate(testLoader):
+        inputs, target = batch
         inputs = inputs.to(device)
         target = target.to(device)
-        dataset_size += inputs.size()[0]  # data.size()=[batch,通道数,32,32]、target.size()=[batch]
+        dataset_size += inputs.size()[0]
         output = model(inputs)
 
         total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-        # if config.my_conf["dataset"].lower() == "mnist":
-        #     total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-        # elif config.my_conf["dataset"].lower() == "cifar":
-        #     total_loss += torch.nn.functional.cross_entropy(output, target, reduction='sum').item()
-        # else:
-        #     raise TypeError("Not find Appropriate mode.")
-        # .data意即将变量的tensor取出来
-        # 因为tensor包含data和grad，分别放置数据和计算的梯度
-        pred = output.data.max(1)[1]  # get the index of the max log-probability
-        # 按照从左往右的 第一维 取出最大值的索引 torch.max()
+        pred = output.data.max(1)[1]
         correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
+        if need_extra:
+            regression_preds.extend(pred.detach().cpu().tolist())
+            regression_targets.extend(target.detach().cpu().tolist())
         if conf_matrix is None:
             num_classes = output.shape[1]
             conf_matrix = torch.zeros(num_classes, num_classes, dtype=torch.long)
         for t, p in zip(target.view(-1).cpu(), pred.view(-1).cpu()):
             conf_matrix[t.long(), p.long()] += 1
-    # torch.view_as(tensor)即将调用函数的变量，转变为同参数tensor同样的形状
-    # torch.eq()对两个张量tensor进行逐元素比较，如果相等则返回True，否则返回False。True和False作运算时可以作1、0使用
-    # .cpu()这一步将预测结果放到cpu上，利用电脑内存存储列表值。从而避免测试过程中爆显存。
-    # .sum()是将我们一个批量的预测值求和，便于累加到correct变量中。
-    # .item()取出 单元素张量的元素值 并返回该值，保持原元素类型不变。
 
-    acc = 100.0 * (float(correct) / float(dataset_size))  # 准确率
-    aver_loss = total_loss / dataset_size  # 平均损失
-    precision = recall = f1 = 0.0
+    metrics = {
+        'accuracy': 100.0 * (float(correct) / float(dataset_size)) if dataset_size else 0.0,
+        'loss': total_loss / dataset_size if dataset_size else 0.0,
+        'precision': 0.0,
+        'recall': 0.0,
+        'f1': 0.0
+    }
+
     if conf_matrix is not None:
         precision, recall, f1 = _compute_classification_metrics(conf_matrix)
+        metrics.update({'precision': precision, 'recall': recall, 'f1': f1})
 
-    return acc, aver_loss, precision, recall, f1
+    if need_extra and len(regression_preds) == len(regression_targets) and len(regression_targets) > 0:
+        mae, rrmse, r2 = _compute_regression_metrics(regression_preds, regression_targets)
+        metrics['mae'] = mae
+        metrics['rrmse'] = rrmse
+        metrics['r2'] = r2
+
+    return metrics
 
 
 # 返回一个元组类型（正确的个数，总的测试集数量，准确率，损失值）

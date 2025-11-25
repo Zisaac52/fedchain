@@ -1,12 +1,23 @@
 import copy
 import logging
+import os
 import random
+import sys
 
 import torch
 import torchvision
 
 from model import mnist_Net, FmCNN, MyResNet18
 from modelEval import model_eval
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+try:
+    from blockchain.node.service.ddmlts_scheduler import DDMLTSScheduler
+except ImportError:
+    DDMLTSScheduler = None
 
 logger = logging.getLogger()
 
@@ -24,6 +35,18 @@ class Server:
         self._initModel()
         # 对当前训练计数，用于识别当前学习状态
         self._count = 0
+        self._metric_header_logged = False
+        self.scheduler = None
+        self._client_stats = {}
+        self._active_plan = {}
+        self._round_client_count = 0
+        scheduler_mode = getattr(self.config, 'scheduler_mode', 'fedavg').lower()
+        if DDMLTSScheduler is not None and scheduler_mode in ('ddmlts_a', 'ddmlts_b'):
+            try:
+                self.scheduler = DDMLTSScheduler(dict(self.config))
+                logger.info('DDMLTS scheduler enabled: mode=%s', scheduler_mode)
+            except Exception as err:
+                logger.warning('Failed to init DDMLTS scheduler: %s', err)
 
     def _initModel(self):
         if self._gobal_model is None:
@@ -63,12 +86,15 @@ class Server:
                 value = value.float()
                 add_per_layer = add_per_layer.float()
                 value.add_(add_per_layer)
-        pass
+        if self._round_client_count is None:
+            self._round_client_count = 0
+        self._round_client_count += 1
 
     # 进行模型聚合，接收来自worknode的diff，更新至自己的模型
     def aggregation(self):
         if self._diffval is not None:
-            avg_w = 1 / len(self._clientList)
+            participating = max(1, self._round_client_count)
+            avg_w = 1 / participating
             # 全局模型参数更新,得到新的global_model
             for name, value in self._gobal_model.state_dict().items():
                 update_per_layer = self._diffval[name]
@@ -85,6 +111,7 @@ class Server:
                 # value.add_(update_per_layer)
             # 聚合完成后将全局diff清空
             self._diffval = None
+        self._round_client_count = 0
 
     # 保存每次聚合完成的模型
     def saveModel(self, path):
@@ -94,6 +121,11 @@ class Server:
     def addClient(self, client, cln_name):
         self._clientList.append(client)
         self._clientlab.append(cln_name)
+        self._client_stats[str(client.get_client_id())] = {
+            'dataset_size': client.get_dataset_size(),
+            'last_elapsed': 1.0,
+            'speed': client.estimate_speed()
+        }
         logger.info('节点-{}-加入'.format(cln_name))
 
     def random_client(self):
@@ -109,14 +141,12 @@ class Server:
 
     # 原始的训练聚合方法
     def start_train(self):
-        if self._count == 0:
-            # 输出准确率和loss
-            if self.config.openEval:
-                logger.info('gobal_epoch,Accuracy,loss,Precision,Recall,F1-score')
-        # 模型评估
         if self.config.openEval:
-            acc, loss, precision, recall, f1 = model_eval(self._gobal_model, self.config.device)
-            logger.info('{},{},{},{},{},{}'.format(self._count, acc, loss, precision, recall, f1))
+            metrics = model_eval(self._gobal_model, self.config.device)
+            self._log_metrics(self._count, metrics)
+        if self._should_use_scheduler():
+            self._apply_scheduler_plan()
+        self._round_client_count = 0
         self._count += 1
         max_client_time = 0.0
         for i, cln in enumerate(self.random_client()):
@@ -126,6 +156,7 @@ class Server:
                     continue
             diff, ver, elapsed = cln.local_train()
             max_client_time = max(max_client_time, elapsed)
+            self._update_client_stats(cln, elapsed)
             if ver != -1:
                 self.accumulator(diff, 1)
         # 模型聚合
@@ -142,22 +173,100 @@ class Server:
         for cln in self._clientList:
             self.dispatch(cln)
 
+    def _should_use_scheduler(self):
+        scheduler_mode = getattr(self.config, 'scheduler_mode', 'fedavg').lower()
+        return self.scheduler is not None and scheduler_mode in ('ddmlts_a', 'ddmlts_b')
+
+    def _build_state_vectors(self):
+        vectors = {}
+        for cln in self._clientList:
+            cid = str(cln.get_client_id())
+            stats = self._client_stats.get(cid)
+            if stats:
+                dataset = float(stats.get('dataset_size', cln.get_dataset_size() or 1.0))
+                elapsed = float(stats.get('last_elapsed', 1.0))
+                speed = float(stats.get('speed', cln.estimate_speed()))
+                vectors[cid] = (dataset, max(elapsed, 1e-6), speed, speed)
+            else:
+                vectors[cid] = cln.get_state_vector()
+        return vectors
+
+    def _apply_scheduler_plan(self):
+        if not self._should_use_scheduler():
+            return
+        vectors = self._build_state_vectors()
+        if not vectors:
+            return
+        try:
+            plan = self.scheduler.build_plan(vectors)
+        except Exception as err:
+            logger.warning('scheduler error: %s', err)
+            return
+        self._active_plan = plan
+        summary = {cid: {'epoch': data.get('local_epoch'), 'micro': data.get('micro_batches')}
+                   for cid, data in plan.items()}
+        if summary:
+            logger.info('DDMLTS assignment: %s', summary)
+        for cln in self._clientList:
+            assignment = plan.get(str(cln.get_client_id()))
+            cln.apply_workload(assignment)
+
+    def _update_client_stats(self, client, elapsed):
+        cid = str(client.get_client_id())
+        self._client_stats[cid] = {
+            'dataset_size': client.get_dataset_size(),
+            'last_elapsed': elapsed,
+            'speed': client.estimate_speed()
+        }
+
+    def _build_metric_headers(self):
+        headers = ['gobal_epoch', 'Accuracy', 'loss', 'Precision', 'Recall', 'F1-score']
+        if getattr(self.config, 'enable_mae', False):
+            headers.append('MAE')
+        if getattr(self.config, 'enable_rrmse', False):
+            headers.append('RRMSE')
+        if getattr(self.config, 'enable_r2', False):
+            headers.append('R-squared')
+        return headers
+
+    def _format_metric_row(self, epoch_label, metrics):
+        row = [
+            str(epoch_label),
+            f"{metrics.get('accuracy', 0.0):.2f}",
+            f"{metrics.get('loss', 0.0):.6f}",
+            f"{metrics.get('precision', 0.0):.2f}",
+            f"{metrics.get('recall', 0.0):.2f}",
+            f"{metrics.get('f1', 0.0):.2f}",
+        ]
+        if getattr(self.config, 'enable_mae', False):
+            row.append(f"{metrics.get('mae', 0.0):.6f}")
+        if getattr(self.config, 'enable_rrmse', False):
+            row.append(f"{metrics.get('rrmse', 0.0):.6f}")
+        if getattr(self.config, 'enable_r2', False):
+            row.append(f"{metrics.get('r2', 0.0):.6f}")
+        return ','.join(row)
+
+    def _log_metrics(self, epoch_idx, metrics):
+        if not self._metric_header_logged:
+            logger.info(','.join(self._build_metric_headers()))
+            self._metric_header_logged = True
+        logger.info(self._format_metric_row(epoch_idx, metrics))
+
     # -----------------------------------------------------------------------------------?
     # -----------------------------------------------------------------------------------?
     # -----------------------------------------------------------------------------------?
     # 测试聚合方法，用于平衡测试的，忽略以下方法train，test_my_scheme，dispatch_test
     def train(self, currentEpoch):
 
-        if self._count == 0:
-            # 输出准确率和loss
-            if self.config.openEval:
-                print('gobal_epoch,Accuracy,loss,Precision,Recall,F1-score')
-        # 模型评估
         if self.config.openEval:
-            acc, loss, precision, recall, f1 = model_eval(self._gobal_model, self.config.device)
-            print('{},{},{},{},{},{}'.format(self._count, acc, loss, precision, recall, f1))
+            metrics = model_eval(self._gobal_model, self.config.device)
+            row = self._format_metric_row(self._count, metrics)
+            print(row)
         self._count += 1
+        self._round_client_count = 0
 
+        if self._should_use_scheduler():
+            self._apply_scheduler_plan()
         # 训练聚合
         max_client_time = 0.0
         for i, cln in enumerate(self._clientList):
@@ -170,6 +279,7 @@ class Server:
                 else:
                     diff, ver, elapsed = cln.local_train()
                     max_client_time = max(max_client_time, elapsed)
+                    self._update_client_stats(cln, elapsed)
                 # 全局模型分发错误，大部分节点都落后一个版本
                 # 若是新方案则进行更改u的值
                 # print('第{}轮，客户端{}版本差异：{}'.format(currentEpoch, i, ver != self.version))
@@ -184,6 +294,7 @@ class Server:
             else:
                 diff, ver, elapsed = cln.local_train()
                 max_client_time = max(max_client_time, elapsed)
+                self._update_client_stats(cln, elapsed)
                 self.accumulator(diff, u)
 
         # 模型聚合
@@ -220,9 +331,10 @@ class Server:
                 self.dispatch(self._clientList[ids])
         # 用聚合的模型进行评估
         for ids in self.config.test_client_id:
-            acc, loss, precision, recall, f1 = model_eval(
+            metrics = model_eval(
                 self._gobal_model,
                 self.config.device,
                 testLoader=self._clientList[ids].getDataset()
             )
-            print('节点id{},{},{},{},{},{}'.format(ids, acc, loss, precision, recall, f1))
+            row = self._format_metric_row(f'client-{ids}', metrics)
+            print(f'节点id{ids},{row}')

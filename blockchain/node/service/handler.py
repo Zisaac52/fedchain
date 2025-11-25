@@ -11,6 +11,7 @@ import torch
 from blockchain.node.config import config
 from blockchain.node.entity.MessageEntity import Message, FormData, RegisterData
 from blockchain.node.service.client import runRemoteFunc
+from blockchain.node.service.ddmlts_scheduler import DDMLTSScheduler
 from blockchain.node.service.handlerFL import start_fl_train_handler, calcdiff_handler
 from blockchain.node.splitFL.SPclient import SPclient
 from blockchain.node.splitFL.SPserver import SPserver
@@ -46,6 +47,8 @@ class Handler(object):
     STVECTOR = None
     # 服务端模型，只有SN有
     SEVERMODEL = None
+    SCHEDULER = None
+    LAST_SCHEDULE = None
     # 锁
     lock = Lock()
 
@@ -63,6 +66,20 @@ class Handler(object):
             logger.info('{} - New list {}'.format(sys._getframe().f_code.co_name, self.SN_NODE_LIST))
         else:
             self.STVECTOR = {}
+        if self.SCHEDULER is None:
+            Handler.SCHEDULER = DDMLTSScheduler(my_conf)
+            Handler.LAST_SCHEDULE = {}
+
+    def generate_schedule(self):
+        if self.SCHEDULER is None:
+            return {}
+        vectors = self.STVECTOR or {}
+        plan = self.SCHEDULER.build_plan(vectors)
+        Handler.LAST_SCHEDULE = plan
+        return plan
+
+    def get_last_schedule(self):
+        return self.LAST_SCHEDULE or {}
 
 
 # -----------------------------------------------------------------------------handler
@@ -193,6 +210,9 @@ def distribute_task_handler(message):
         return Message(type=6, status=200, content={"message": 'download'})
     elif cmd == 'SV':
         return Message(type=6, status=200, content={'message': 'success', 'data': Handler().STVECTOR})
+    elif cmd == 'SCH':
+        plan = Handler().generate_schedule()
+        return Message(type=6, status=200, content={'message': 'success', 'data': plan})
     elif cmd == 'FLT':
         epoch = my_conf.get('gobal_epoch', 20)  # 默认还是 20
         msg = {'message': 'train', 'cmd': cmd, 'epoch': epoch}

@@ -13,8 +13,14 @@ def testFL():
         model.load_state_dict(stict)
         if torch.cuda.is_available():
             model.cuda()
-        acc, loss, precision, recall, f1 = model_eval(model)
-        print('{},{},{},{},{}'.format(acc, loss, precision, recall, f1))
+        metrics = model_eval(model, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        print('{},{},{},{},{}'.format(
+            metrics.get('accuracy', 0.0),
+            metrics.get('loss', 0.0),
+            metrics.get('precision', 0.0),
+            metrics.get('recall', 0.0),
+            metrics.get('f1', 0.0)
+        ))
 
 
 def testSpfl():

@@ -14,6 +14,7 @@ class DDMLTSScheduler:
 
     def __init__(self, conf: Dict):
         self.conf = conf or {}
+        self.state_weights = self._parse_state_weights(self.conf.get('state_vector_weights'))
         # Cache of the last computed plan for debugging/visualisation.
         self._last_plan: Dict[str, Dict] = {}
 
@@ -69,9 +70,14 @@ class DDMLTSScheduler:
             # Expand to a fixed dimension for clustering
             while len(padded) < 4:
                 padded.append(0.0)
+            vector_np = np.array(padded, dtype=np.float32)
+            if self.state_weights:
+                for idx, coeff in enumerate(self.state_weights):
+                    if idx < vector_np.shape[0]:
+                        vector_np[idx] *= coeff
             data.append({
                 'client_id': client_id,
-                'vector': np.array(padded, dtype=np.float32),
+                'vector': vector_np,
                 'speed': perf
             })
         return data
@@ -151,3 +157,16 @@ class DDMLTSScheduler:
     def _get_conf(self, key, default):
         value = self.conf.get(key, default)
         return value
+
+    def _parse_state_weights(self, weights):
+        if not weights:
+            return None
+        parsed = []
+        try:
+            for coeff in weights:
+                parsed.append(float(coeff))
+        except (ValueError, TypeError):
+            return None
+        if not parsed:
+            return None
+        return tuple(parsed)

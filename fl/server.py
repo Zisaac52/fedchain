@@ -1,5 +1,6 @@
 import copy
 import logging
+import math
 import os
 import random
 import sys
@@ -158,7 +159,9 @@ class Server:
             max_client_time = max(max_client_time, elapsed)
             self._update_client_stats(cln, elapsed)
             if ver != -1:
-                self.accumulator(diff, 1)
+                delta = max(0, self.version - ver)
+                weight = self._staleness_weight(delta)
+                self.accumulator(diff, weight)
         # 模型聚合
         self.aggregation()
         self.version += 1
@@ -218,6 +221,21 @@ class Server:
             'last_elapsed': elapsed,
             'speed': client.estimate_speed()
         }
+
+    def _staleness_weight(self, delta):
+        mode = getattr(self.config, 'staleness_mode', 'reciprocal')
+        mode = mode.lower() if isinstance(mode, str) else 'reciprocal'
+        delta = max(0.0, float(delta))
+        if mode == 'constant':
+            return 1.0
+        if mode == 'exponential':
+            lam = max(0.0, float(getattr(self.config, 'staleness_lambda', 0.5)))
+            return math.exp(-lam * delta)
+        if mode == 'polynomial':
+            power = max(0.0, float(getattr(self.config, 'staleness_power', 0.5)))
+            return 1.0 / ((delta + 1.0) ** (power if power > 0 else 1.0))
+        # reciprocal default
+        return 1.0 / (delta + 1.0)
 
     def _build_metric_headers(self):
         headers = ['gobal_epoch', 'Accuracy', 'loss', 'Precision', 'Recall', 'F1-score']
@@ -295,7 +313,12 @@ class Server:
                 diff, ver, elapsed = cln.local_train()
                 max_client_time = max(max_client_time, elapsed)
                 self._update_client_stats(cln, elapsed)
-                self.accumulator(diff, u)
+                if ver != -1:
+                    delta = max(0, self.version - ver)
+                    weight = self._staleness_weight(delta)
+                else:
+                    weight = u
+                self.accumulator(diff, weight)
 
         # 模型聚合
         self.aggregation()

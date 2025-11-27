@@ -44,6 +44,11 @@ my_conf = {
     'ddmlts_tau_ratio': 0.25,
     'state_vector_weights': (1 / 3, 1 / 3, 1 / 3),
 
+    # Staleness weighting (for async aggregation)
+    'staleness_mode': 'reciprocal',  # reciprocal | polynomial | exponential | constant
+    'staleness_power': 0.5,          # used in polynomial
+    'staleness_lambda': 0.5,         # used in exponential
+
     # Metrics toggles (for reviewer requests)
     'enable_precision_metrics': True,
     'enable_mae': False,
@@ -61,6 +66,24 @@ if _state_weight_env:
         )
         if weights:
             my_conf['state_vector_weights'] = weights
+    except ValueError:
+        pass
+
+_staleness_mode = os.environ.get('STALENESS_MODE')
+if _staleness_mode:
+    my_conf['staleness_mode'] = _staleness_mode.lower()
+
+_staleness_power = os.environ.get('STALENESS_POWER')
+if _staleness_power:
+    try:
+        my_conf['staleness_power'] = float(_staleness_power)
+    except ValueError:
+        pass
+
+_staleness_lambda = os.environ.get('STALENESS_LAMBDA')
+if _staleness_lambda:
+    try:
+        my_conf['staleness_lambda'] = float(_staleness_lambda)
     except ValueError:
         pass
 
